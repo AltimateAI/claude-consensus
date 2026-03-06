@@ -165,6 +165,12 @@ Or re-run `/consensus-setup` anytime to reconfigure.
 - **Session artifacts**: Saved in `/tmp/` for debugging.
 - **Independent reviews**: Each model reviews with no cross-contamination.
 
+## Contributing
+
+Contributions are welcome! Please read the [Contributing Guide](CONTRIBUTING.md) before submitting a PR.
+
+This project follows the [Contributor Covenant Code of Conduct](CODE_OF_CONDUCT.md).
+
 ## License
 
 MIT License. Copyright (c) 2026 [Altimate AI](https://altimate.ai/).
