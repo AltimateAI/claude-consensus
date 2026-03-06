@@ -9,6 +9,14 @@ Multiple AI models independently review code or plan implementations, then conve
 
 ## Quick Start
 
+Just tell Claude:
+
+> "Set up claude-consensus: https://github.com/AltimateAI/claude-consensus"
+
+That's it for most users. The rest of this README is for understanding what's happening under the hood.
+
+### Manual Setup
+
 ```bash
 # 1. Install the plugin
 /plugin marketplace add AltimateAI/claude-consensus
