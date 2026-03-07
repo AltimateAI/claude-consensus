@@ -21,13 +21,10 @@ If `$ARGUMENTS` is empty:
 1. Read `~/.claude/consensus.json` (user override) using the Read tool
 2. If not found, read the plugin's `consensus.config.json` from the plugin directory (same directory as the `commands/` folder — i.e., the parent directory of this command file)
 3. If neither exists: **ABORT** with: "No config found. Run `/consensus-setup` first to configure your models."
-4. Parse the JSON. Validate the config:
-   - `models` must be a non-empty array
-   - Each model must have non-empty `id`, `name`, `command`, and `resume_flag` strings — skip models with missing fields with a warning
-   - `min_quorum` must be an integer >= 2
-   - If `min_quorum` is missing or invalid, default to `floor(total/2) + 1`
-5. Filter models where `enabled` is `true`. Store the result as `MODELS` (array) and `MIN_QUORUM` (integer).
-6. If the JSON is malformed (parse error), warn the user and **ABORT**: "Config file is malformed. Run `/consensus-setup` to regenerate."
+4. Parse the JSON. Filter models where `enabled` is `true` — store as `MODELS` array.
+5. Set `MIN_QUORUM` to the **exact value** of the `min_quorum` field from the config JSON. Do NOT calculate or override this value. Use the number the user chose during setup. Only if `min_quorum` is literally missing from the JSON or is not a valid integer >= 2, then fall back to `floor((len(MODELS)+1)/2) + 1`.
+6. Validate: `models` must be a non-empty array. Each model must have non-empty `id`, `name`, `command`, and `resume_flag` strings — skip models with missing fields with a warning.
+7. If the JSON is malformed (parse error), warn the user and **ABORT**: "Config file is malformed. Run `/consensus-setup` to regenerate."
 
 ## Step 0.5: Preflight Checks
 

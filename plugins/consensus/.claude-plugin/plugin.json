@@ -1,6 +1,6 @@
 {
   "name": "consensus",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Configurable multi-model code review and plan review with consensus convergence",
   "author": {
     "name": "AltimateAI"
