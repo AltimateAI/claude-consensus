@@ -28,7 +28,7 @@ What actually happened. Include any error messages or unexpected output.
 
 - **OS**: (e.g., macOS 15, Ubuntu 24.04)
 - **Claude Code version**: (run `claude --version`)
-- **Models enabled**: (e.g., GPT 5.2 Codex, Gemini 3.1 Pro)
+- **Models enabled**: (e.g., GPT 5.4 Codex, Gemini 3.1 Pro)
 - **Provider**: (OpenRouter / Native CLIs / Both)
 - **Quorum setting**: (e.g., 5)
 

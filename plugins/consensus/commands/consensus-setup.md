@@ -116,19 +116,19 @@ The 7 supported models and their CLI mappings:
 
 | Model ID | Name | OpenRouter (Kilo) | Native CLI |
 |----------|------|-------------------|------------|
-| `gpt` | GPT 5.2 Codex | `kilo run -m openrouter/openai/gpt-5.2-codex --auto` | `codex` (if codex CLI installed) |
+| `gpt` | GPT 5.4 Codex | `kilo run -m openrouter/openai/gpt-5.4-codex --auto` | `codex` (if codex CLI installed) |
 | `gemini` | Gemini 3.1 Pro | `kilo run -m openrouter/google/gemini-3.1-pro-preview --auto` | `gemini` (if gemini CLI installed) |
 | `kimi` | Kimi K2.5 | `kilo run -m openrouter/moonshotai/kimi-k2.5 --auto` | OpenRouter only |
 | `grok` | Grok 4 | `kilo run -m openrouter/x-ai/grok-4 --auto` | OpenRouter only |
 | `minimax` | MiniMax M2.5 | `kilo run -m openrouter/minimax/minimax-m2.5 --auto` | OpenRouter only |
 | `glm5` | GLM-5 | `kilo run -m openrouter/z-ai/glm-5 --auto` | OpenRouter only |
-| `qwen` | Qwen 3.5 Plus | `kilo run -m openrouter/qwen/qwen3.5-plus-02-15 --auto` | OpenRouter only |
+| `qwen` | Qwen 3.5 Plus | `qwen` | Native CLI (qwen) |
 
-**Note on native CLIs**: For `codex` and `gemini`, set the config's `command` field to just `codex` or `gemini`. The teammate template in the review/plan commands detects these and uses the correct native invocation patterns automatically (e.g., `codex exec -s read-only` for reviews, `codex exec resume --last` for convergence, `gemini -p` with `--approval-mode plan` for reviews, `gemini --resume latest` for convergence). The `resume_flag` field is ignored for native CLIs.
+**Note on native CLIs**: For `codex`, `gemini`, and `qwen`, set the config's `command` field to just `codex`, `gemini`, or `qwen`. The teammate template in the review/plan commands detects these and uses the correct native invocation patterns automatically (e.g., `codex exec -s read-only` for reviews, `codex exec resume --last` for convergence, `gemini -p` with `--approval-mode plan` for reviews, `gemini --resume latest` for convergence, `qwen --approval-mode plan -p` with `-o text` for reviews, `qwen -c -p` for convergence). The `resume_flag` field is ignored for native CLIs.
 
 Determine which models are available:
 - **OpenRouter path**: All 7 available if `kilo` installed + API key set
-- **Native path**: Only `gpt` (if codex installed) and `gemini` (if gemini installed)
+- **Native path**: Only `gpt` (if codex installed), `gemini` (if gemini installed), and `qwen` (if qwen installed)
 - **Both path**: Native CLI where available, OpenRouter/Kilo for the rest
 
 ```
@@ -137,7 +137,7 @@ AskUserQuestion:
   header: "Models"
   multiSelect: true
   options:
-    - label: "GPT 5.2 Codex"
+    - label: "GPT 5.4 Codex"
       description: "{available via OpenRouter / available via codex CLI / not available}"
     - label: "Gemini 3.1 Pro"
       description: "{available via OpenRouter / available via gemini CLI / not available}"
@@ -233,7 +233,7 @@ Report results:
 ```
 ## Smoke Test Results
 
-- GPT 5.2 Codex: PASS
+- GPT 5.4 Codex: PASS
 - Gemini 3.1 Pro: PASS
 - Kimi K2.5: FAIL — {error or empty output}
 - ...

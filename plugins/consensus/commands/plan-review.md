@@ -37,6 +37,7 @@ For each model in `MODELS`, verify CLI availability:
 - Commands starting with `kilo` -> check: `command -v kilo` AND `[ -n "$OPENROUTER_API_KEY" ]`
 - Commands starting with `codex` -> check: `command -v codex`
 - Commands starting with `gemini` -> check: `command -v gemini`
+- Commands starting with `qwen` -> check: `command -v qwen`
 
 Run all checks in parallel. Remove unavailable models from `MODELS` with a warning for each:
 ```
@@ -174,6 +175,9 @@ SESSION_DIR={SESSION_DIR}
    **If `{MODEL_COMMAND}` starts with `gemini`:**
    gemini -p "$(cat $SESSION_DIR/prompt.md)" --approval-mode plan > $SESSION_DIR/{MODEL_ID}.md 2>&1
 
+   **If `{MODEL_COMMAND}` starts with `qwen`:**
+   qwen --approval-mode plan -p "$(cat $SESSION_DIR/prompt.md)" -o text > $SESSION_DIR/{MODEL_ID}.md 2>&1
+
    **Otherwise (Kilo/OpenRouter — default):**
    {MODEL_COMMAND} "$(cat $SESSION_DIR/prompt.md)" > $SESSION_DIR/{MODEL_ID}.md 2>&1
 
@@ -196,6 +200,9 @@ After sending the plan, WAIT. The lead will send you a convergence prompt. When 
 
    **If `{MODEL_COMMAND}` starts with `gemini`:**
    gemini --resume latest -p "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" --approval-mode plan > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
+
+   **If `{MODEL_COMMAND}` starts with `qwen`:**
+   qwen -c -p "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" -o text > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
 
    **Otherwise (Kilo/OpenRouter — default):**
    {MODEL_COMMAND} {MODEL_RESUME_FLAG} "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
