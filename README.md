@@ -46,7 +46,7 @@ That's it for most users. The rest of this README is for understanding what's ha
 | Model | Provider | OpenRouter ID | Native CLI |
 |-------|----------|---------------|------------|
 | Claude | Anthropic | (built-in) | Claude Code |
-| GPT 5.2 Codex | OpenAI | `openai/gpt-5.2-codex` | `codex` |
+| GPT 5.4 Codex | OpenAI | `openai/gpt-5.4-codex` | `codex` |
 | Gemini 3.1 Pro | Google | `google/gemini-3.1-pro-preview` | `gemini` |
 | Kimi K2.5 | Moonshot | `moonshotai/kimi-k2.5` | — |
 | Grok 4 | xAI | `x-ai/grok-4` | — |
@@ -104,8 +104,8 @@ Run `/consensus-setup` to interactively configure:
   "models": [
     {
       "id": "gpt",
-      "name": "GPT 5.2 Codex",
-      "command": "kilo run -m openrouter/openai/gpt-5.2-codex --auto",
+      "name": "GPT 5.4 Codex",
+      "command": "kilo run -m openrouter/openai/gpt-5.4-codex --auto",
       "resume_flag": "-c",
       "enabled": true
     }
