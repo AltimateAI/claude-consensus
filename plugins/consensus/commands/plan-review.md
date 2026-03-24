@@ -260,7 +260,7 @@ Complete Claude's plan. Then use the following polling protocol to wait for all 
 
 **Polling-based wait loop:**
 1. Every ~1 minute, check each pending teammate's output file size:
-   `stat -f%z $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0`
+   `wc -c < $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0`
 2. Track the file size. If it's growing (or the file doesn't exist yet because the model is still exploring) — the model is working. Keep waiting.
 3. A teammate is ONLY considered stuck if:
    - Their output file exists AND
@@ -428,7 +428,7 @@ On failure: preserve `$SESSION_DIR` for debugging and tell the user where files 
 9. **Return to plan mode.** After final plan + cleanup, call `EnterPlanMode` for user review (with fallback to direct presentation).
 10. **Convergence through messaging.** Lead sends draft to teammates, they run their model and report back. Max 2 rounds.
 11. **Be patient with teammates — they almost never fail.** External CLI models (Codex, Gemini, Kilo) take time to explore the codebase but almost always finish successfully. Follow this activity-based patience protocol:
-    - **Poll output files** every ~1 minute using `stat -f%z $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0` to check file size.
+    - **Poll output files** every ~1 minute using `wc -c < $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0` to check file size.
     - **Growing file (or no file yet)** = the model is working. Keep waiting.
     - **A teammate is ONLY considered stuck if**: their output file exists AND its size has not changed for **10 consecutive checks** (10 minutes of zero growth).
     - If stuck after 10 minutes, send a check-in message: "Are you still working? Send me your current output if you have any." Wait another 3 minutes before giving up on that teammate.
