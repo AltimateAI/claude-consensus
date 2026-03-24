@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.1.0] - 2026-03-24
+
+### Added
+
+- Nemotron 120B and MiMo V2 Pro models (9 external models total)
+- Compaction resilience for code-review and plan-review commands
+- Qwen native CLI detection in setup wizard
+- Unique progress files per session (no collisions on back-to-back runs)
+- Status-aware resume (only resumes IN_PROGRESS, ignores COMPLETED/FAILED)
+
+### Changed
+
+- MiniMax bumped from M2.5 to M2.7
+- Qwen now has both OpenRouter and native CLI paths (was native-only)
+- Setup wizard updated to 9 models with qwen CLI detection
+- `stat -f%z` replaced with cross-platform `wc -c` for Linux compatibility
+- Default quorum raised from 5 to 6
+- Removed token budget constraints from compaction resilience
+
+### Fixed
+
+- Setup wizard rule 3 now correctly lists codex, gemini, and qwen for native CLI support
+
 ## [1.0.0] - 2026-03-05
 
 ### Added
