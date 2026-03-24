@@ -7,6 +7,44 @@ description: "Multi-model plan review — AI models independently plan, then con
 
 Get independent implementation plans from multiple AI models (Claude + configured external models), compare them, and converge on the strongest plan through structured synthesis and approval rounds.
 
+## Compaction Resilience
+
+This is a long-running command. Context compaction may erase in-memory state mid-run.
+
+- **Check resume**: Read `data/scratch/active-progress-consensus-plan-review.md` — if it exists, is <24h old, and the Command field matches `consensus:plan-review`, skip to the first unchecked goal
+- **Write progress**: Create the progress file with the goals template below before starting
+- **Save incrementally**: Write/append to `$SESSION_DIR` files after each phase, not at the end
+- **Context budget**: ~80K tokens (N external model outputs × ~8K + Claude's plan + synthesis)
+
+### Goals Template
+
+```
+# consensus:plan-review — {TASK}
+Started: [timestamp]
+Status: IN_PROGRESS
+Command: consensus:plan-review
+SESSION_DIR: {SESSION_DIR path}
+TTL: 24h
+
+## Goals
+- [ ] Phase 1 — Setup: load config, write task prompt, copy plan file if needed, create team
+- [ ] Phase 2 — Spawn planners: launch teammate agents + write Claude's plan
+- [ ] Phase 3 — Collect plans: wait for all models to send their plans
+- [ ] Phase 4 — Analyze & compare: build comparison table, identify consensus approach
+- [ ] Phase 5 — Synthesize: draft unified implementation plan
+- [ ] Phase 6 — Convergence: send draft to all models, collect APPROVE/CHANGES NEEDED
+- [ ] Phase 7 — Write final plan with attribution table, cleanup team
+
+## Progress
+- [HH:MM] Starting execution...
+```
+
+### Checkpoints
+- After Phase 2: Claude's plan written to `$SESSION_DIR/claude.md`
+- After Phase 3: All model plans on disk at `$SESSION_DIR/{model.id}.md`
+- After Phase 5: Draft plan at `$SESSION_DIR/draft.md`
+- After Phase 6: Convergence responses at `$SESSION_DIR/{model.id}-convergence.md`
+
 ## Input
 
 `$ARGUMENTS` = the user's original task description / request.

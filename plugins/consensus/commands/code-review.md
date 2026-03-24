@@ -7,6 +7,44 @@ description: "Multi-model code review — AI models independently review code, t
 
 Get independent code reviews from multiple AI models (Claude + configured external models), compare findings, and converge on a unified review through structured synthesis and agreement rounds.
 
+## Compaction Resilience
+
+This is a long-running command. Context compaction may erase in-memory state mid-run.
+
+- **Check resume**: Read `data/scratch/active-progress-consensus-code-review.md` — if it exists, is <24h old, and the Command field matches `consensus:code-review`, skip to the first unchecked goal
+- **Write progress**: Create the progress file with the goals template below before starting
+- **Save incrementally**: Write/append to `$SESSION_DIR` files after each phase, not at the end
+- **Context budget**: ~80K tokens (N external model outputs × ~8K + Claude's review + synthesis)
+
+### Goals Template
+
+```
+# consensus:code-review — {TARGET}
+Started: [timestamp]
+Status: IN_PROGRESS
+Command: consensus:code-review
+SESSION_DIR: {SESSION_DIR path}
+TTL: 24h
+
+## Goals
+- [ ] Phase 1 — Setup: load config, determine review target, write prompt, create team
+- [ ] Phase 2 — Spawn reviewers: launch teammate agents + write Claude's code review
+- [ ] Phase 3 — Collect reviews: wait for all models to send their reviews
+- [ ] Phase 4 — Analyze & compare: build comparison table, identify consensus issues
+- [ ] Phase 5 — Synthesize: draft unified code review ordered by severity
+- [ ] Phase 6 — Convergence: send draft to all models, collect APPROVE/CHANGES NEEDED
+- [ ] Phase 7 — Present final review with attribution table, cleanup team
+
+## Progress
+- [HH:MM] Starting execution...
+```
+
+### Checkpoints
+- After Phase 2: Claude's review written to `$SESSION_DIR/claude.md`
+- After Phase 3: All model reviews on disk at `$SESSION_DIR/{model.id}.md`
+- After Phase 5: Draft review at `$SESSION_DIR/draft.md`
+- After Phase 6: Convergence responses at `$SESSION_DIR/{model.id}-convergence.md`
+
 ## Input
 
 `$ARGUMENTS` = what to review. Examples: `PR #123`, `staged changes`, `last 3 commits`, `app/service/foo.py`, or a description of what changed.
