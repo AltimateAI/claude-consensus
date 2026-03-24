@@ -11,8 +11,9 @@ Get independent implementation plans from multiple AI models (Claude + configure
 
 This is a long-running command. Context compaction may erase in-memory state mid-run.
 
-- **Check resume**: Read `data/scratch/active-progress-consensus-plan-review.md` — if it exists, is <24h old, and the Command field matches `consensus:plan-review`, skip to the first unchecked goal
-- **Write progress**: Create the progress file with the goals template below before starting
+- **Check resume**: Glob `data/scratch/active-progress-consensus-plan-review-*.md` — find any with Status `IN_PROGRESS` and < 24h old. If found, read its SESSION_DIR and skip to first unchecked goal. If Status is `COMPLETED` or `FAILED`, ignore it.
+- **Write progress**: After creating SESSION_DIR, create a unique progress file: `data/scratch/active-progress-consensus-plan-review-{SESSION_ID}.md` (where SESSION_ID is the random suffix from SESSION_DIR, e.g. `X4f2kL`)
+- **Mark done**: Set Status to `COMPLETED` at end of successful run, or `FAILED` on abort
 - **Save incrementally**: Write/append to `$SESSION_DIR` files after each phase, not at the end
 - **Context budget**: ~80K tokens (N external model outputs × ~8K + Claude's plan + synthesis)
 
