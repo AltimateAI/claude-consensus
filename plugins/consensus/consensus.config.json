@@ -31,8 +31,8 @@
     },
     {
       "id": "minimax",
-      "name": "MiniMax M2.5",
-      "command": "kilo run -m openrouter/minimax/minimax-m2.5 --auto",
+      "name": "MiniMax M2.7",
+      "command": "kilo run -m openrouter/minimax/minimax-m2.7 --auto",
       "resume_flag": "-c",
       "enabled": true
     },
@@ -49,7 +49,21 @@
       "command": "kilo run -m openrouter/qwen/qwen3.5-plus-02-15 --auto",
       "resume_flag": "-c",
       "enabled": true
+    },
+    {
+      "id": "nemotron",
+      "name": "Nemotron 120B",
+      "command": "kilo run -m openrouter/nvidia/nemotron-3-super-120b-a12b --auto",
+      "resume_flag": "-c",
+      "enabled": true
+    },
+    {
+      "id": "mimo",
+      "name": "MiMo V2 Pro",
+      "command": "kilo run -m openrouter/xiaomi/mimo-v2-pro --auto",
+      "resume_flag": "-c",
+      "enabled": true
     }
   ],
-  "min_quorum": 5
+  "min_quorum": 6
 }
