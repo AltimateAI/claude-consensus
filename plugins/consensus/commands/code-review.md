@@ -15,7 +15,6 @@ This is a long-running command. Context compaction may erase in-memory state mid
 - **Write progress**: After creating SESSION_DIR, create a unique progress file: `data/scratch/active-progress-consensus-code-review-{SESSION_ID}.md` (where SESSION_ID is the random suffix from SESSION_DIR, e.g. `X4f2kL`)
 - **Mark done**: Set Status to `COMPLETED` at end of successful run, or `FAILED` on abort
 - **Save incrementally**: Write/append to `$SESSION_DIR` files after each phase, not at the end
-- **Context budget**: ~80K tokens (N external model outputs × ~8K + Claude's review + synthesis)
 
 ### Goals Template
 
