@@ -7,6 +7,44 @@ description: "Multi-model plan review — AI models independently plan, then con
 
 Get independent implementation plans from multiple AI models (Claude + configured external models), compare them, and converge on the strongest plan through structured synthesis and approval rounds.
 
+## Compaction Resilience
+
+This is a long-running command. Context compaction may erase in-memory state mid-run.
+
+- **Check resume**: Glob `data/scratch/active-progress-consensus-plan-review-*.md` — find any with Status `IN_PROGRESS` and < 24h old. If found, read its SESSION_DIR and skip to first unchecked goal. If Status is `COMPLETED` or `FAILED`, ignore it.
+- **Write progress**: After creating SESSION_DIR, create a unique progress file: `data/scratch/active-progress-consensus-plan-review-{SESSION_ID}.md` (where SESSION_ID is the random suffix from SESSION_DIR, e.g. `X4f2kL`)
+- **Mark done**: Set Status to `COMPLETED` at end of successful run, or `FAILED` on abort
+- **Save incrementally**: Write/append to `$SESSION_DIR` files after each phase, not at the end
+
+### Goals Template
+
+```
+# consensus:plan-review — {TASK}
+Started: [timestamp]
+Status: IN_PROGRESS
+Command: consensus:plan-review
+SESSION_DIR: {SESSION_DIR path}
+TTL: 24h
+
+## Goals
+- [ ] Phase 1 — Setup: load config, write task prompt, copy plan file if needed, create team
+- [ ] Phase 2 — Spawn planners: launch teammate agents + write Claude's plan
+- [ ] Phase 3 — Collect plans: wait for all models to send their plans
+- [ ] Phase 4 — Analyze & compare: build comparison table, identify consensus approach
+- [ ] Phase 5 — Synthesize: draft unified implementation plan
+- [ ] Phase 6 — Convergence: send draft to all models, collect APPROVE/CHANGES NEEDED
+- [ ] Phase 7 — Write final plan with attribution table, cleanup team
+
+## Progress
+- [HH:MM] Starting execution...
+```
+
+### Checkpoints
+- After Phase 2: Claude's plan written to `$SESSION_DIR/claude.md`
+- After Phase 3: All model plans on disk at `$SESSION_DIR/{model.id}.md`
+- After Phase 5: Draft plan at `$SESSION_DIR/draft.md`
+- After Phase 6: Convergence responses at `$SESSION_DIR/{model.id}-convergence.md`
+
 ## Input
 
 `$ARGUMENTS` = the user's original task description / request.
@@ -222,7 +260,7 @@ Complete Claude's plan. Then use the following polling protocol to wait for all 
 
 **Polling-based wait loop:**
 1. Every ~1 minute, check each pending teammate's output file size:
-   `stat -f%z $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0`
+   `wc -c < $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0`
 2. Track the file size. If it's growing (or the file doesn't exist yet because the model is still exploring) — the model is working. Keep waiting.
 3. A teammate is ONLY considered stuck if:
    - Their output file exists AND
@@ -390,7 +428,7 @@ On failure: preserve `$SESSION_DIR` for debugging and tell the user where files 
 9. **Return to plan mode.** After final plan + cleanup, call `EnterPlanMode` for user review (with fallback to direct presentation).
 10. **Convergence through messaging.** Lead sends draft to teammates, they run their model and report back. Max 2 rounds.
 11. **Be patient with teammates — they almost never fail.** External CLI models (Codex, Gemini, Kilo) take time to explore the codebase but almost always finish successfully. Follow this activity-based patience protocol:
-    - **Poll output files** every ~1 minute using `stat -f%z $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0` to check file size.
+    - **Poll output files** every ~1 minute using `wc -c < $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0` to check file size.
     - **Growing file (or no file yet)** = the model is working. Keep waiting.
     - **A teammate is ONLY considered stuck if**: their output file exists AND its size has not changed for **10 consecutive checks** (10 minutes of zero growth).
     - If stuck after 10 minutes, send a check-in message: "Are you still working? Send me your current output if you have any." Wait another 3 minutes before giving up on that teammate.

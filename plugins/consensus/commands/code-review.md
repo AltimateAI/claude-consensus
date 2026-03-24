@@ -7,6 +7,44 @@ description: "Multi-model code review — AI models independently review code, t
 
 Get independent code reviews from multiple AI models (Claude + configured external models), compare findings, and converge on a unified review through structured synthesis and agreement rounds.
 
+## Compaction Resilience
+
+This is a long-running command. Context compaction may erase in-memory state mid-run.
+
+- **Check resume**: Glob `data/scratch/active-progress-consensus-code-review-*.md` — find any with Status `IN_PROGRESS` and < 24h old. If found, read its SESSION_DIR and skip to first unchecked goal. If Status is `COMPLETED` or `FAILED`, ignore it.
+- **Write progress**: After creating SESSION_DIR, create a unique progress file: `data/scratch/active-progress-consensus-code-review-{SESSION_ID}.md` (where SESSION_ID is the random suffix from SESSION_DIR, e.g. `X4f2kL`)
+- **Mark done**: Set Status to `COMPLETED` at end of successful run, or `FAILED` on abort
+- **Save incrementally**: Write/append to `$SESSION_DIR` files after each phase, not at the end
+
+### Goals Template
+
+```
+# consensus:code-review — {TARGET}
+Started: [timestamp]
+Status: IN_PROGRESS
+Command: consensus:code-review
+SESSION_DIR: {SESSION_DIR path}
+TTL: 24h
+
+## Goals
+- [ ] Phase 1 — Setup: load config, determine review target, write prompt, create team
+- [ ] Phase 2 — Spawn reviewers: launch teammate agents + write Claude's code review
+- [ ] Phase 3 — Collect reviews: wait for all models to send their reviews
+- [ ] Phase 4 — Analyze & compare: build comparison table, identify consensus issues
+- [ ] Phase 5 — Synthesize: draft unified code review ordered by severity
+- [ ] Phase 6 — Convergence: send draft to all models, collect APPROVE/CHANGES NEEDED
+- [ ] Phase 7 — Present final review with attribution table, cleanup team
+
+## Progress
+- [HH:MM] Starting execution...
+```
+
+### Checkpoints
+- After Phase 2: Claude's review written to `$SESSION_DIR/claude.md`
+- After Phase 3: All model reviews on disk at `$SESSION_DIR/{model.id}.md`
+- After Phase 5: Draft review at `$SESSION_DIR/draft.md`
+- After Phase 6: Convergence responses at `$SESSION_DIR/{model.id}-convergence.md`
+
 ## Input
 
 `$ARGUMENTS` = what to review. Examples: `PR #123`, `staged changes`, `last 3 commits`, `app/service/foo.py`, or a description of what changed.
@@ -200,7 +238,7 @@ Complete Claude's review. Then use the following polling protocol to wait for al
 
 **Polling-based wait loop:**
 1. Every ~1 minute, check each pending teammate's output file size:
-   `stat -f%z $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0`
+   `wc -c < $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0`
 2. Track the file size. If it's growing (or the file doesn't exist yet because the model is still exploring) — the model is working. Keep waiting.
 3. A teammate is ONLY considered stuck if:
    - Their output file exists AND
@@ -394,7 +432,7 @@ On failure: preserve `$SESSION_DIR` for debugging and tell the user where files 
 9. **Convergence through messaging.** Lead sends draft to teammates, they run their model and report back. Max 2 rounds.
 10. **No plan mode.** Code reviews are presented directly, not written to plan files.
 11. **Be patient with teammates — they almost never fail.** External CLI models (Codex, Gemini, Kilo) take time to explore the codebase but almost always finish successfully. Follow this activity-based patience protocol:
-    - **Poll output files** every ~1 minute using `stat -f%z $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0` to check file size.
+    - **Poll output files** every ~1 minute using `wc -c < $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0` to check file size.
     - **Growing file (or no file yet)** = the model is working. Keep waiting.
     - **A teammate is ONLY considered stuck if**: their output file exists AND its size has not changed for **10 consecutive checks** (10 minutes of zero growth).
     - If stuck after 10 minutes, send a check-in message: "Are you still working? Send me your current output if you have any." Wait another 3 minutes before giving up on that teammate.
