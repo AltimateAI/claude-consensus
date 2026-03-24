@@ -42,6 +42,10 @@ command -v codex && echo "CODEX_OK" || echo "CODEX_MISSING"
 command -v gemini && echo "GEMINI_OK" || echo "GEMINI_MISSING"
 ```
 
+```bash
+command -v qwen && echo "QWEN_OK" || echo "QWEN_MISSING"
+```
+
 Also check for an existing OpenRouter API key (verify it's non-empty):
 
 ```bash
@@ -56,6 +60,7 @@ Report findings to the user:
 - Kilo CLI: {installed / not found}
 - Codex CLI: {installed / not found}
 - Gemini CLI: {installed / not found}
+- Qwen CLI: {installed / not found}
 - OpenRouter API key: {found in ~/.claude/.env / not found}
 ```
 
@@ -67,9 +72,9 @@ AskUserQuestion:
   header: "Provider"
   options:
     - label: "OpenRouter (Recommended)"
-      description: "1 API key, all 7 models via Kilo CLI. Simplest setup."
+      description: "1 API key, all 9 models via Kilo CLI. Simplest setup."
     - label: "Native CLIs"
-      description: "Use codex, gemini CLIs directly where available. Requires each CLI installed separately."
+      description: "Use codex, gemini, qwen CLIs directly where available. Requires each CLI installed separately."
     - label: "Both"
       description: "Mix and match — use native CLIs where available, OpenRouter/Kilo for the rest."
 ```
@@ -112,7 +117,7 @@ If user provides a key, update `~/.claude/.env` idempotently:
 
 Build the model list based on provider choice and detected CLIs.
 
-The 7 supported models and their CLI mappings:
+The 9 supported models and their CLI mappings:
 
 | Model ID | Name | OpenRouter (Kilo) | Native CLI |
 |----------|------|-------------------|------------|
@@ -120,14 +125,16 @@ The 7 supported models and their CLI mappings:
 | `gemini` | Gemini 3.1 Pro | `kilo run -m openrouter/google/gemini-3.1-pro-preview --auto` | `gemini` (if gemini CLI installed) |
 | `kimi` | Kimi K2.5 | `kilo run -m openrouter/moonshotai/kimi-k2.5 --auto` | OpenRouter only |
 | `grok` | Grok 4 | `kilo run -m openrouter/x-ai/grok-4 --auto` | OpenRouter only |
-| `minimax` | MiniMax M2.5 | `kilo run -m openrouter/minimax/minimax-m2.5 --auto` | OpenRouter only |
+| `minimax` | MiniMax M2.7 | `kilo run -m openrouter/minimax/minimax-m2.7 --auto` | OpenRouter only |
 | `glm5` | GLM-5 | `kilo run -m openrouter/z-ai/glm-5 --auto` | OpenRouter only |
-| `qwen` | Qwen 3.5 Plus | `qwen` | Native CLI (qwen) |
+| `qwen` | Qwen 3.5 Plus | `kilo run -m openrouter/qwen/qwen3.5-plus-02-15 --auto` | `qwen` (if qwen CLI installed) |
+| `nemotron` | Nemotron 120B | `kilo run -m openrouter/nvidia/nemotron-3-super-120b-a12b --auto` | OpenRouter only |
+| `mimo` | MiMo V2 Pro | `kilo run -m openrouter/xiaomi/mimo-v2-pro --auto` | OpenRouter only |
 
 **Note on native CLIs**: For `codex`, `gemini`, and `qwen`, set the config's `command` field to just `codex`, `gemini`, or `qwen`. The teammate template in the review/plan commands detects these and uses the correct native invocation patterns automatically (e.g., `codex exec -s read-only` for reviews, `codex exec resume --last` for convergence, `gemini -p` with `--approval-mode plan` for reviews, `gemini --resume latest` for convergence, `qwen --approval-mode plan -p` with `-o text` for reviews, `qwen -c -p` for convergence). The `resume_flag` field is ignored for native CLIs.
 
 Determine which models are available:
-- **OpenRouter path**: All 7 available if `kilo` installed + API key set
+- **OpenRouter path**: All 9 available if `kilo` installed + API key set
 - **Native path**: Only `gpt` (if codex installed), `gemini` (if gemini installed), and `qwen` (if qwen installed)
 - **Both path**: Native CLI where available, OpenRouter/Kilo for the rest
 
@@ -145,9 +152,19 @@ AskUserQuestion:
       description: "{available via OpenRouter / not available}"
     - label: "Grok 4"
       description: "{available via OpenRouter / not available}"
+    - label: "MiniMax M2.7"
+      description: "{available via OpenRouter / not available}"
+    - label: "GLM-5"
+      description: "{available via OpenRouter / not available}"
+    - label: "Qwen 3.5 Plus"
+      description: "{available via OpenRouter / available via qwen CLI / not available}"
+    - label: "Nemotron 120B"
+      description: "{available via OpenRouter / not available}"
+    - label: "MiMo V2 Pro"
+      description: "{available via OpenRouter / not available}"
 ```
 
-(Show all 7 models. Mark unavailable ones clearly. Pre-select available ones.)
+(Show all 9 models. Mark unavailable ones clearly. Pre-select available ones.)
 
 **Enforce: at least 1 external model must be selected.** If user selects none, tell them: "At least 1 external model is required for consensus reviews."
 
@@ -179,7 +196,7 @@ Constraints:
 
 Build the config JSON based on selections from Steps 3-6.
 
-For each of the 7 models:
+For each of the 9 models:
 - If the model was selected: set `enabled: true` and populate `command`/`resume_flag` based on provider choice
 - If the model was NOT selected: set `enabled: false` with the default OpenRouter command (so users can re-enable later)
 
@@ -212,7 +229,7 @@ Write the config to `~/.claude/consensus.json` using the Write tool:
 }
 ```
 
-All 7 models are always written to the config — enabled or disabled.
+All 9 models are always written to the config — enabled or disabled.
 
 ## Step 8: Smoke Test
 
@@ -273,12 +290,12 @@ Print the final summary:
 
 ## Rules
 
-1. **7 fixed models only.** Do not offer custom model configuration. The wizard supports exactly the 7 models listed above.
+1. **9 fixed models only.** Do not offer custom model configuration. The wizard supports exactly the 9 models listed above.
 2. **Idempotent .env updates.** When writing API keys, preserve all existing keys in the file. Only add/update the `OPENROUTER_API_KEY` line.
-3. **Native CLI support for codex and gemini only.** When a user selects native CLIs, set the config's `command` field to `codex` or `gemini`. The teammate template in the review/plan commands handles the full invocation patterns automatically. All other models use OpenRouter/Kilo only.
-4. **OpenRouter is the recommended path.** 1 key = 7 models. Emphasize this as the simplest setup.
+3. **Native CLI support for codex, gemini, and qwen.** When a user selects native CLIs, set the config's `command` field to `codex`, `gemini`, or `qwen`. The teammate template in the review/plan commands handles the full invocation patterns automatically. All other models use OpenRouter/Kilo only.
+4. **OpenRouter is the recommended path.** 1 key = 9 models. Emphasize this as the simplest setup.
 5. **Enforce minimum 1 external model.** Claude alone is not a consensus.
 6. **Hard-stop on quorum failure.** Never finalize a config that can't meet its own quorum.
 7. **User config location is `~/.claude/consensus.json`.** The plugin default at `plugins/consensus/consensus.config.json` is the fallback only.
-8. **Write all 7 models to config.** Include disabled models with `enabled: false` so users can re-enable them later without re-running setup.
+8. **Write all 9 models to config.** Include disabled models with `enabled: false` so users can re-enable them later without re-running setup.
 9. **Targeted API key sourcing.** Only export `OPENROUTER_API_KEY` from `~/.claude/.env`, never export all variables.
