@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.2.0] - 2026-03-30
+
+### Added
+
+- Generic `/consensus:review` command for document and general topic reviews
+- Multi-directory support (`--dirs`) for cross-repo reviews and plans across all three commands
+- CodeRabbit static analysis as supplementary reviewer in code-review (runs `coderabbit review --plain`)
+- Per-CLI directory flags: `--add-dir` for Codex, `--include-directories` for Gemini/Qwen
+
+### Changed
+
+- Plugin description updated to reflect three review commands
+
 ## [1.1.0] - 2026-03-24
 
 ### Added
