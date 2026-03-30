@@ -51,6 +51,23 @@ TTL: 24h
 
 `$ARGUMENTS` = what to review. Examples: `~/.claude/plans/my-plan.md`, `the plan`, `docs/architecture.md`, or a free-text description like `"should we use Redis or Postgres for this queue?"`.
 
+### Additional Directories
+
+If the review spans multiple repositories, the user can pass `--dirs` to give all models access to additional directories:
+
+```
+/consensus:review docs/architecture.md --dirs /path/to/frontend,/path/to/backend
+```
+
+**Parsing `--dirs`:**
+1. Extract the `--dirs` value from `$ARGUMENTS` (everything after `--dirs` up to the next `--` flag or end of string)
+2. Split on commas to get a list of absolute paths -> store as `EXTRA_DIRS` array
+3. Remove the `--dirs ...` portion from `$ARGUMENTS` so it doesn't pollute the review target
+4. Validate each path exists with `test -d`. Warn and skip any that don't exist.
+5. If no `--dirs` flag is present, `EXTRA_DIRS` is empty (no additional directories)
+
+Store `EXTRA_DIRS` for use in Step 1 (prompt) and Step 3 (teammate template).
+
 ### Input Detection
 
 Auto-detect the review type from `$ARGUMENTS`:
@@ -143,6 +160,12 @@ Read this document completely: `{FILE_PATH or .consensus-draft.md if copied to r
 
 **Verify claims against the actual codebase** — do not trust the document blindly. Check that referenced files, functions, APIs, and patterns actually exist and behave as described.
 
+{IF EXTRA_DIRS is non-empty, add this paragraph:}
+Additional repositories are available for context at these paths — explore them if the document references or depends on code there:
+{for each dir in EXTRA_DIRS:}
+- `{dir}`
+{end for}
+
 Evaluate against these 7 criteria:
 1. **Accuracy**: Are factual claims about the codebase correct? Do referenced files/functions exist?
 2. **Completeness**: Are there missing steps, unaddressed edge cases, or gaps?
@@ -181,6 +204,12 @@ I need your assessment of the following:
 ---
 
 You have full access to the codebase. Explore relevant files to validate claims and ground your assessment.
+
+{IF EXTRA_DIRS is non-empty, add this paragraph:}
+Additional repositories are available for context at these paths — explore them if the topic references or depends on code there:
+{for each dir in EXTRA_DIRS:}
+- `{dir}`
+{end for}
 
 Evaluate against these 5 dimensions:
 1. **Correctness**: Are the claims, logic, or approach correct?
@@ -243,7 +272,15 @@ Task:
 
 ### TEAMMATE TEMPLATE
 
-For each model, substitute `{MODEL_ID}`, `{MODEL_NAME}`, `{MODEL_COMMAND}`, `{MODEL_RESUME_FLAG}`, and `{SESSION_DIR}` into this template:
+For each model, substitute `{MODEL_ID}`, `{MODEL_NAME}`, `{MODEL_COMMAND}`, `{MODEL_RESUME_FLAG}`, `{SESSION_DIR}`, and `{EXTRA_DIRS_FLAGS}` into this template.
+
+**Building `{EXTRA_DIRS_FLAGS}`** — if `EXTRA_DIRS` is non-empty, build per-CLI flags:
+- For commands starting with `codex`: `--add-dir /path1 --add-dir /path2` (one `--add-dir` per directory)
+- For commands starting with `gemini`: `--include-directories /path1,/path2` (comma-separated)
+- For commands starting with `qwen`: `--include-directories /path1,/path2` (comma-separated)
+- For commands starting with `kilo`: empty string (kilo has no flag — the paths are already in the prompt)
+
+If `EXTRA_DIRS` is empty, `{EXTRA_DIRS_FLAGS}` is an empty string for all CLIs.
 
 ```
 You are {MODEL_ID}-reviewer on the review team. You run {MODEL_NAME} via CLI to get a review, then participate in convergence rounds.
@@ -258,13 +295,13 @@ SESSION_DIR={SESSION_DIR}
 3. Run the CLI command to get the review. Use the correct invocation for your CLI type:
 
    **If `{MODEL_COMMAND}` starts with `codex`:**
-   codex exec -s read-only -o $SESSION_DIR/{MODEL_ID}.md - < $SESSION_DIR/prompt.md
+   codex exec -s read-only {EXTRA_DIRS_FLAGS} -o $SESSION_DIR/{MODEL_ID}.md - < $SESSION_DIR/prompt.md
 
    **If `{MODEL_COMMAND}` starts with `gemini`:**
-   gemini -p "$(cat $SESSION_DIR/prompt.md)" --approval-mode plan > $SESSION_DIR/{MODEL_ID}.md 2>&1
+   gemini {EXTRA_DIRS_FLAGS} -p "$(cat $SESSION_DIR/prompt.md)" --approval-mode plan > $SESSION_DIR/{MODEL_ID}.md 2>&1
 
    **If `{MODEL_COMMAND}` starts with `qwen`:**
-   qwen --approval-mode plan -p "$(cat $SESSION_DIR/prompt.md)" -o text > $SESSION_DIR/{MODEL_ID}.md 2>&1
+   qwen {EXTRA_DIRS_FLAGS} --approval-mode plan -p "$(cat $SESSION_DIR/prompt.md)" -o text > $SESSION_DIR/{MODEL_ID}.md 2>&1
 
    **Otherwise (Kilo/OpenRouter — default):**
    {MODEL_COMMAND} "$(cat $SESSION_DIR/prompt.md)" > $SESSION_DIR/{MODEL_ID}.md 2>&1
