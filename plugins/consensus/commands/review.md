@@ -593,6 +593,62 @@ rm -f $REPO_DIR/.consensus-draft.md
 
 On failure: preserve `$SESSION_DIR` for debugging and tell the user where files are.
 
+## Step 11: Record Performance Metrics (if enabled)
+
+Check the `performance_tracking` field from the config loaded in Step 0. If it is `true`, execute this step. If `false` or missing, skip entirely.
+
+### 11a: Gather Data
+
+For each model that participated (Claude + all models in `MODELS`):
+
+1. **Response status**: Check `$SESSION_DIR/{model-id}.md`
+   - Exists and > 0 bytes → `"yes"`
+   - Exists but 0 bytes → `"failed"`
+   - Does not exist → `"timeout"`
+
+2. **Output size**: `wc -c < $SESSION_DIR/{model-id}.md 2>/dev/null || echo 0`
+
+3. **Convergence vote**: Read `$SESSION_DIR/{model-id}-convergence.md`. Find first occurrence of `APPROVE` or `CHANGES NEEDED`. If file missing or neither found → `null`.
+
+4. **Attribution counts from `$SESSION_DIR/draft.md`**: Find all `_Flagged by:` lines. For each line:
+   - Parse model names between `_Flagged by:` and `_`
+   - Normalize names to model IDs using config model names and IDs. Also: Claude→claude.
+   - If 1-2 models listed → each gets +1 `unique_findings`
+   - If 3+ models listed → each gets +1 `consensus_findings`
+   - Count total `_Flagged by:` lines as `total_findings`
+
+### 11b: Build Run Record
+
+```json
+{
+  "id": "{SESSION_ID from SESSION_DIR path suffix}",
+  "timestamp": "{current UTC ISO 8601}",
+  "command": "consensus:review",
+  "target": "{short description of review target}",
+  "review_type": "{read from $SESSION_DIR/type.txt if exists, otherwise GENERAL_REVIEW}",
+  "total_findings": "{count}",
+  "models": {
+    "{model-id}": {
+      "responded": "yes|failed|timeout",
+      "unique_findings": "{N}",
+      "consensus_findings": "{N}",
+      "convergence_vote": "APPROVE|CHANGES NEEDED|null",
+      "output_bytes": "{N}"
+    }
+  }
+}
+```
+
+### 11c: Append to JSON
+
+1. Read `~/.claude/multi-model-performance.json`. If it does not exist, create it with `{"version": 1, "runs": []}`.
+2. Parse JSON
+3. Check if `id` already exists in `runs[]` — if so, skip (dedup)
+4. Append run record to `runs[]`
+5. Write updated JSON back
+
+Report: `"Performance tracked: {total_findings} findings across {M} models. {len(runs)} total runs recorded."`
+
 ## Rules
 
 1. **No model names in prompts.** Never mention any AI model name in prompts sent to external tools. Frame as first-person.
