@@ -1,11 +1,11 @@
 {
   "name": "consensus",
-  "version": "1.0.1",
-  "description": "Configurable multi-model code review and plan review with consensus convergence",
+  "version": "1.2.0",
+  "description": "Configurable multi-model code review, plan review, and general review with consensus convergence",
   "author": {
     "name": "AltimateAI"
   },
   "repository": "https://github.com/AltimateAI/claude-consensus",
   "license": "MIT",
-  "keywords": ["code-review", "plan-review", "multi-model", "consensus", "configurable"]
+  "keywords": ["code-review", "plan-review", "review", "multi-model", "consensus", "configurable", "coderabbit"]
 }

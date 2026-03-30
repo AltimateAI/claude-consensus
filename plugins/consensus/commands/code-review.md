@@ -49,6 +49,23 @@ TTL: 24h
 
 `$ARGUMENTS` = what to review. Examples: `PR #123`, `staged changes`, `last 3 commits`, `app/service/foo.py`, or a description of what changed.
 
+### Additional Directories
+
+If the review spans multiple repositories, the user can pass `--dirs` to give all models access to additional directories:
+
+```
+/consensus:code-review PR #42 --dirs /path/to/frontend,/path/to/backend
+```
+
+**Parsing `--dirs`:**
+1. Extract the `--dirs` value from `$ARGUMENTS` (everything after `--dirs` up to the next `--` flag or end of string)
+2. Split on commas to get a list of absolute paths -> store as `EXTRA_DIRS` array
+3. Remove the `--dirs ...` portion from `$ARGUMENTS` so it doesn't pollute the review target
+4. Validate each path exists with `test -d`. Warn and skip any that don't exist.
+5. If no `--dirs` flag is present, `EXTRA_DIRS` is empty (no additional directories)
+
+Store `EXTRA_DIRS` for use in Step 1 (prompt) and Step 3 (teammate template).
+
 If `$ARGUMENTS` is empty:
 1. Run `git diff HEAD` and `git diff --cached` to capture unstaged and staged changes
 2. If both are empty, run `git diff main...HEAD` to get all changes on the current branch vs main
@@ -82,14 +99,20 @@ Run all checks in parallel. Remove unavailable models from `MODELS` with a warni
 Warning: Skipping {model.name} — {reason: "kilo CLI not found" / "OPENROUTER_API_KEY not set" / "codex CLI not found"}
 ```
 
-Count available models + 1 (Claude) = `TOTAL_PARTICIPANTS`.
+**Check CodeRabbit availability:**
+```bash
+command -v coderabbit && echo "CODERABBIT_OK"
+```
+If available, set `CODERABBIT_AVAILABLE=true`. CodeRabbit is a supplementary static analysis reviewer — it does NOT count toward quorum and does NOT participate in convergence. Its findings are incorporated during synthesis.
 
-If `TOTAL_PARTICIPANTS < MIN_QUORUM`:
+Count available models + 1 (Claude) = `TOTAL_PARTICIPANTS`. If CodeRabbit is available, add 1 to `TOTAL_PARTICIPANTS` for reporting (but NOT for quorum calculation).
+
+If `TOTAL_PARTICIPANTS (excluding CodeRabbit) < MIN_QUORUM`:
 **ABORT**: "Only {TOTAL_PARTICIPANTS} models available but quorum requires {MIN_QUORUM}. Run `/consensus-setup` to reconfigure."
 
 Report:
 ```
-Panel: Claude + {comma-separated list of available model names} ({TOTAL_PARTICIPANTS} total, quorum={MIN_QUORUM})
+Panel: Claude + {comma-separated list of available model names}{+ CodeRabbit if available} ({TOTAL_PARTICIPANTS} total, quorum={MIN_QUORUM})
 ```
 
 ## Step 1: Create Session Directory & Write Prompt
@@ -116,6 +139,12 @@ I need a thorough code review. The review target is: {DESCRIPTION — e.g., "the
 To see the changes, run: `{GIT COMMAND — e.g., git diff HEAD~1..HEAD}`
 
 You have full access to the codebase. Explore it — read changed files, related tests, imports, and existing patterns before reviewing. Do NOT review the diff in isolation.
+
+{IF EXTRA_DIRS is non-empty, add this paragraph:}
+Additional repositories are available for context at these paths — explore them if the changes reference or depend on code there:
+{for each dir in EXTRA_DIRS:}
+- `{dir}`
+{end for}
 
 For each issue found, provide:
 
@@ -163,15 +192,33 @@ Task:
   prompt: <see TEAMMATE TEMPLATE below, with variables substituted>
 ```
 
-**While teammates work**, independently create Claude's own review using codebase knowledge — Read the changed files, related tests, understand patterns. Write your review to `$SESSION_DIR/claude.md`.
+**While teammates work**, do two things in parallel:
 
-**Do not wait for teammates before starting Claude's review.** Work in parallel.
+1. **Run CodeRabbit** (if `CODERABBIT_AVAILABLE`):
+   ```bash
+   coderabbit review --plain --base {BASE_BRANCH or BASE_COMMIT} > $SESSION_DIR/coderabbit.md 2>&1
+   ```
+   - Use the same base reference as the review target (e.g., `--base main` for branch diffs, `--base-commit HEAD~N` for commit ranges)
+   - CodeRabbit runs fast (typically 30-60 seconds) and writes structured findings directly
+   - If it fails or returns empty output, set `CODERABBIT_AVAILABLE=false` and continue without it
+
+2. **Write Claude's own review** using codebase knowledge — Read the changed files, related tests, understand patterns. Write your review to `$SESSION_DIR/claude.md`.
+
+**Do not wait for teammates before starting Claude's review or CodeRabbit.** Work in parallel.
 
 **Expected duration:** External CLI models typically take 3-10 minutes to explore the codebase and produce output. Some models may take longer on complex codebases. This is completely normal — these models almost never fail. Do NOT check on teammates, send messages, or assume failure. Just wait for their SendMessage.
 
 ### TEAMMATE TEMPLATE
 
-For each model, substitute `{MODEL_ID}`, `{MODEL_NAME}`, `{MODEL_COMMAND}`, `{MODEL_RESUME_FLAG}`, and `{SESSION_DIR}` into this template:
+For each model, substitute `{MODEL_ID}`, `{MODEL_NAME}`, `{MODEL_COMMAND}`, `{MODEL_RESUME_FLAG}`, `{SESSION_DIR}`, and `{EXTRA_DIRS_FLAGS}` into this template.
+
+**Building `{EXTRA_DIRS_FLAGS}`** — if `EXTRA_DIRS` is non-empty, build per-CLI flags:
+- For commands starting with `codex`: `--add-dir /path1 --add-dir /path2` (one `--add-dir` per directory)
+- For commands starting with `gemini`: `--include-directories /path1,/path2` (comma-separated)
+- For commands starting with `qwen`: `--include-directories /path1,/path2` (comma-separated)
+- For commands starting with `kilo`: empty string (kilo has no flag — the paths are already in the prompt)
+
+If `EXTRA_DIRS` is empty, `{EXTRA_DIRS_FLAGS}` is an empty string for all CLIs.
 
 ```
 You are {MODEL_ID}-reviewer on the code-review team. You run {MODEL_NAME} via CLI to get a code review, then participate in convergence rounds.
@@ -186,13 +233,13 @@ SESSION_DIR={SESSION_DIR}
 3. Run the CLI command to get the review. Use the correct invocation for your CLI type:
 
    **If `{MODEL_COMMAND}` starts with `codex`:**
-   codex exec -s read-only -o $SESSION_DIR/{MODEL_ID}.md - < $SESSION_DIR/prompt.md
+   codex exec -s read-only {EXTRA_DIRS_FLAGS} -o $SESSION_DIR/{MODEL_ID}.md - < $SESSION_DIR/prompt.md
 
    **If `{MODEL_COMMAND}` starts with `gemini`:**
-   gemini -p "$(cat $SESSION_DIR/prompt.md)" --approval-mode plan > $SESSION_DIR/{MODEL_ID}.md 2>&1
+   gemini {EXTRA_DIRS_FLAGS} -p "$(cat $SESSION_DIR/prompt.md)" --approval-mode plan > $SESSION_DIR/{MODEL_ID}.md 2>&1
 
    **If `{MODEL_COMMAND}` starts with `qwen`:**
-   qwen --approval-mode plan -p "$(cat $SESSION_DIR/prompt.md)" -o text > $SESSION_DIR/{MODEL_ID}.md 2>&1
+   qwen {EXTRA_DIRS_FLAGS} --approval-mode plan -p "$(cat $SESSION_DIR/prompt.md)" -o text > $SESSION_DIR/{MODEL_ID}.md 2>&1
 
    **Otherwise (Kilo/OpenRouter — default):**
    {MODEL_COMMAND} "$(cat $SESSION_DIR/prompt.md)" > $SESSION_DIR/{MODEL_ID}.md 2>&1
@@ -253,6 +300,7 @@ Report to user (dynamically built from `MODELS`):
 ## Review Collection: {N}/{TOTAL_PARTICIPANTS} Reviews Received
 
 - Claude: done/failed
+- CodeRabbit: done/skipped/failed (only if CODERABBIT_AVAILABLE)
 - {model.name}: done/failed (reason)
 - ... (one line per model in MODELS)
 ```
@@ -261,7 +309,9 @@ Report to user (dynamically built from `MODELS`):
 
 ## Step 5: Analyze & Compare
 
-Read all available reviews and present a structured comparison:
+Read all available reviews — including CodeRabbit's output at `$SESSION_DIR/coderabbit.md` if it ran — and present a structured comparison.
+
+**CodeRabbit findings**: CodeRabbit produces structured findings with file paths, line numbers, types (potential_issue, refactor_suggestion), and suggested fixes. Parse these and include them alongside the AI model reviews. CodeRabbit findings are treated as an additional signal — they carry weight like any other reviewer but CodeRabbit does NOT participate in convergence rounds.
 
 ```
 ## Review Results ({N}/{TOTAL_PARTICIPANTS} Reviews Received)
@@ -287,7 +337,7 @@ Read all available reviews and present a structured comparison:
 | Overall verdict | {pass/fail} | ... | ... | ... |
 ```
 
-Build the comparison table columns dynamically from `["Claude"] + [m.name for m in MODELS]`.
+Build the comparison table columns dynamically from `["Claude"] + (["CodeRabbit"] if CODERABBIT_AVAILABLE) + [m.name for m in MODELS]`.
 
 ## Step 6: Draft Synthesized Review
 
@@ -397,7 +447,7 @@ Include a **finding attribution table** (dynamically built from participating mo
 | {specific issue from the review} | {model name(s)} | Consensus / Unique / Convergence fix |
 | {another issue} | {model name(s)} | ... |
 
-*Reviewed by {TOTAL_PARTICIPANTS} models: Claude, {comma-separated model names from MODELS}. Convergence: {N} round(s). {any user overrides noted}*
+*Reviewed by {TOTAL_PARTICIPANTS} participants: Claude, {comma-separated model names from MODELS}{, CodeRabbit (static analysis) if it ran}. Convergence: {N} round(s). {any user overrides noted}*
 ```
 
 **Rules for the attribution table:**

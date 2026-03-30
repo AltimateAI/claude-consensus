@@ -5,8 +5,8 @@
     "email": "support@altimate.ai"
   },
   "metadata": {
-    "description": "Configurable multi-model consensus review and planning for Claude Code",
-    "version": "1.0.0"
+    "description": "Configurable multi-model consensus code review, plan review, and general review for Claude Code",
+    "version": "1.2.0"
   },
   "plugins": [
     {
