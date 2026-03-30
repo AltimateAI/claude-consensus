@@ -99,14 +99,20 @@ Run all checks in parallel. Remove unavailable models from `MODELS` with a warni
 Warning: Skipping {model.name} — {reason: "kilo CLI not found" / "OPENROUTER_API_KEY not set" / "codex CLI not found"}
 ```
 
-Count available models + 1 (Claude) = `TOTAL_PARTICIPANTS`.
+**Check CodeRabbit availability:**
+```bash
+command -v coderabbit && echo "CODERABBIT_OK"
+```
+If available, set `CODERABBIT_AVAILABLE=true`. CodeRabbit is a supplementary static analysis reviewer — it does NOT count toward quorum and does NOT participate in convergence. Its findings are incorporated during synthesis.
 
-If `TOTAL_PARTICIPANTS < MIN_QUORUM`:
+Count available models + 1 (Claude) = `TOTAL_PARTICIPANTS`. If CodeRabbit is available, add 1 to `TOTAL_PARTICIPANTS` for reporting (but NOT for quorum calculation).
+
+If `TOTAL_PARTICIPANTS (excluding CodeRabbit) < MIN_QUORUM`:
 **ABORT**: "Only {TOTAL_PARTICIPANTS} models available but quorum requires {MIN_QUORUM}. Run `/consensus-setup` to reconfigure."
 
 Report:
 ```
-Panel: Claude + {comma-separated list of available model names} ({TOTAL_PARTICIPANTS} total, quorum={MIN_QUORUM})
+Panel: Claude + {comma-separated list of available model names}{+ CodeRabbit if available} ({TOTAL_PARTICIPANTS} total, quorum={MIN_QUORUM})
 ```
 
 ## Step 1: Create Session Directory & Write Prompt
@@ -186,9 +192,19 @@ Task:
   prompt: <see TEAMMATE TEMPLATE below, with variables substituted>
 ```
 
-**While teammates work**, independently create Claude's own review using codebase knowledge — Read the changed files, related tests, understand patterns. Write your review to `$SESSION_DIR/claude.md`.
+**While teammates work**, do two things in parallel:
 
-**Do not wait for teammates before starting Claude's review.** Work in parallel.
+1. **Run CodeRabbit** (if `CODERABBIT_AVAILABLE`):
+   ```bash
+   coderabbit review --plain --base {BASE_BRANCH or BASE_COMMIT} > $SESSION_DIR/coderabbit.md 2>&1
+   ```
+   - Use the same base reference as the review target (e.g., `--base main` for branch diffs, `--base-commit HEAD~N` for commit ranges)
+   - CodeRabbit runs fast (typically 30-60 seconds) and writes structured findings directly
+   - If it fails or returns empty output, set `CODERABBIT_AVAILABLE=false` and continue without it
+
+2. **Write Claude's own review** using codebase knowledge — Read the changed files, related tests, understand patterns. Write your review to `$SESSION_DIR/claude.md`.
+
+**Do not wait for teammates before starting Claude's review or CodeRabbit.** Work in parallel.
 
 **Expected duration:** External CLI models typically take 3-10 minutes to explore the codebase and produce output. Some models may take longer on complex codebases. This is completely normal — these models almost never fail. Do NOT check on teammates, send messages, or assume failure. Just wait for their SendMessage.
 
@@ -284,6 +300,7 @@ Report to user (dynamically built from `MODELS`):
 ## Review Collection: {N}/{TOTAL_PARTICIPANTS} Reviews Received
 
 - Claude: done/failed
+- CodeRabbit: done/skipped/failed (only if CODERABBIT_AVAILABLE)
 - {model.name}: done/failed (reason)
 - ... (one line per model in MODELS)
 ```
@@ -292,7 +309,9 @@ Report to user (dynamically built from `MODELS`):
 
 ## Step 5: Analyze & Compare
 
-Read all available reviews and present a structured comparison:
+Read all available reviews — including CodeRabbit's output at `$SESSION_DIR/coderabbit.md` if it ran — and present a structured comparison.
+
+**CodeRabbit findings**: CodeRabbit produces structured findings with file paths, line numbers, types (potential_issue, refactor_suggestion), and suggested fixes. Parse these and include them alongside the AI model reviews. CodeRabbit findings are treated as an additional signal — they carry weight like any other reviewer but CodeRabbit does NOT participate in convergence rounds.
 
 ```
 ## Review Results ({N}/{TOTAL_PARTICIPANTS} Reviews Received)
@@ -318,7 +337,7 @@ Read all available reviews and present a structured comparison:
 | Overall verdict | {pass/fail} | ... | ... | ... |
 ```
 
-Build the comparison table columns dynamically from `["Claude"] + [m.name for m in MODELS]`.
+Build the comparison table columns dynamically from `["Claude"] + (["CodeRabbit"] if CODERABBIT_AVAILABLE) + [m.name for m in MODELS]`.
 
 ## Step 6: Draft Synthesized Review
 
@@ -428,7 +447,7 @@ Include a **finding attribution table** (dynamically built from participating mo
 | {specific issue from the review} | {model name(s)} | Consensus / Unique / Convergence fix |
 | {another issue} | {model name(s)} | ... |
 
-*Reviewed by {TOTAL_PARTICIPANTS} models: Claude, {comma-separated model names from MODELS}. Convergence: {N} round(s). {any user overrides noted}*
+*Reviewed by {TOTAL_PARTICIPANTS} participants: Claude, {comma-separated model names from MODELS}{, CodeRabbit (static analysis) if it ran}. Convergence: {N} round(s). {any user overrides noted}*
 ```
 
 **Rules for the attribution table:**
