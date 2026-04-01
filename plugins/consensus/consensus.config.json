@@ -65,5 +65,6 @@
       "enabled": true
     }
   ],
-  "min_quorum": 6
+  "min_quorum": 6,
+  "performance_tracking": false
 }

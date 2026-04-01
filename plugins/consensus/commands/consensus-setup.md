@@ -131,7 +131,7 @@ The 9 supported models and their CLI mappings:
 | `nemotron` | Nemotron 120B | `kilo run -m openrouter/nvidia/nemotron-3-super-120b-a12b --auto` | OpenRouter only |
 | `mimo` | MiMo V2 Pro | `kilo run -m openrouter/xiaomi/mimo-v2-pro --auto` | OpenRouter only |
 
-**Note on native CLIs**: For `codex`, `gemini`, and `qwen`, set the config's `command` field to just `codex`, `gemini`, or `qwen`. The teammate template in the review/plan commands detects these and uses the correct native invocation patterns automatically (e.g., `codex exec -s read-only` for reviews, `codex exec resume --last` for convergence, `gemini -p` with `--approval-mode plan` for reviews, `gemini --resume latest` for convergence, `qwen --approval-mode plan -p` with `-o text` for reviews, `qwen -c -p` for convergence). The `resume_flag` field is ignored for native CLIs.
+**Note on native CLIs**: For `codex`, `gemini`, and `qwen`, set the config's `command` field to just `codex`, `gemini`, or `qwen`. The teammate template in the review/plan commands detects these and uses the correct native invocation patterns automatically (e.g., `codex exec -s read-only` for reviews, `codex exec resume --last` for convergence, `gemini -p` for reviews, `gemini --resume latest` for convergence, `qwen --approval-mode plan -p` with `-o text` for reviews, `qwen -c -p` for convergence). The `resume_flag` field is ignored for native CLIs.
 
 Determine which models are available:
 - **OpenRouter path**: All 9 available if `kilo` installed + API key set
@@ -268,6 +268,36 @@ Do NOT finalize the config in this case. Delete `~/.claude/consensus.json` and a
 
 If quorum is still met after disabling failed models, rewrite `~/.claude/consensus.json` with updated enabled/disabled states.
 
+## Step 8.5: Performance Tracking
+
+Ask the user if they want to enable automatic performance tracking:
+
+```
+AskUserQuestion:
+  question: "Enable performance tracking? Records which models contribute unique findings so you can identify and prune underperformers."
+  header: "Performance Tracking"
+  options:
+    - label: "Yes (Recommended)"
+      description: "Append metrics to ~/.claude/multi-model-performance.json after each run. View with /consensus:performance."
+    - label: "No"
+      description: "Skip performance tracking"
+```
+
+If **Yes**:
+1. Set `"performance_tracking": true` in `~/.claude/consensus.json` (add the field to the config written in Step 7)
+2. If `~/.claude/multi-model-performance.json` does not exist, create it:
+   ```json
+   {
+     "version": 1,
+     "runs": []
+   }
+   ```
+3. Report: "Performance tracking enabled. View results anytime with `/consensus:performance`."
+
+If **No**:
+1. Set `"performance_tracking": false` in `~/.claude/consensus.json`
+2. Report: "Performance tracking disabled. You can enable it later by re-running `/consensus-setup`."
+
 ## Step 9: Summary
 
 Print the final summary:
@@ -282,9 +312,13 @@ Print the final summary:
 
 **Quorum:** {min_quorum} of {total}
 
+**Performance tracking:** {enabled / disabled}
+
 **Next steps:**
 - `/code-review [target]` — multi-model code review
 - `/plan-review [task]` — multi-model plan review
+- `/review [target]` — multi-model document or general review
+- `/consensus:performance` — view model performance data (if tracking enabled)
 - `/consensus-setup` — reconfigure models anytime
 ```
 

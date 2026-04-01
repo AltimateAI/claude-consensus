@@ -236,7 +236,7 @@ SESSION_DIR={SESSION_DIR}
    codex exec -s read-only {EXTRA_DIRS_FLAGS} -o $SESSION_DIR/{MODEL_ID}.md - < $SESSION_DIR/prompt.md
 
    **If `{MODEL_COMMAND}` starts with `gemini`:**
-   gemini {EXTRA_DIRS_FLAGS} -p "$(cat $SESSION_DIR/prompt.md)" --approval-mode plan > $SESSION_DIR/{MODEL_ID}.md 2>&1
+   gemini {EXTRA_DIRS_FLAGS} -p "$(cat $SESSION_DIR/prompt.md)" > $SESSION_DIR/{MODEL_ID}.md 2>&1
 
    **If `{MODEL_COMMAND}` starts with `qwen`:**
    qwen {EXTRA_DIRS_FLAGS} --approval-mode plan -p "$(cat $SESSION_DIR/prompt.md)" -o text > $SESSION_DIR/{MODEL_ID}.md 2>&1
@@ -262,7 +262,7 @@ After sending the review, WAIT. The lead will send you a convergence prompt. Whe
    codex exec resume --last - < $SESSION_DIR/convergence-prompt-{MODEL_ID}.md > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
 
    **If `{MODEL_COMMAND}` starts with `gemini`:**
-   gemini --resume latest -p "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" --approval-mode plan > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
+   gemini --resume latest -p "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
 
    **If `{MODEL_COMMAND}` starts with `qwen`:**
    qwen -c -p "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" -o text > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
@@ -468,6 +468,62 @@ TeamDelete
 ```
 
 On failure: preserve `$SESSION_DIR` for debugging and tell the user where files are.
+
+## Step 11: Record Performance Metrics (if enabled)
+
+Check the `performance_tracking` field from the config loaded in Step 0. If it is `true`, execute this step. If `false` or missing, skip entirely.
+
+### 11a: Gather Data
+
+For each model that participated (Claude + all models in `MODELS`, + CodeRabbit if it ran):
+
+1. **Response status**: Check `$SESSION_DIR/{model-id}.md`
+   - Exists and > 0 bytes → `"yes"`
+   - Exists but 0 bytes → `"failed"`
+   - Does not exist → `"timeout"`
+
+2. **Output size**: `wc -c < $SESSION_DIR/{model-id}.md 2>/dev/null || echo 0`
+
+3. **Convergence vote**: Read `$SESSION_DIR/{model-id}-convergence.md`. Find first occurrence of `APPROVE` or `CHANGES NEEDED`. If file missing or neither found → `null`. (CodeRabbit has no convergence vote — always `null`.)
+
+4. **Attribution counts from `$SESSION_DIR/draft.md`**: Find all `_Flagged by:` lines. For each line:
+   - Parse model names between `_Flagged by:` and `_`
+   - Normalize names to model IDs using config model names and IDs. Also: Claude→claude, CodeRabbit→coderabbit.
+   - If 1-2 models listed → each gets +1 `unique_findings`
+   - If 3+ models listed → each gets +1 `consensus_findings`
+   - Count total `_Flagged by:` lines as `total_findings`
+
+### 11b: Build Run Record
+
+```json
+{
+  "id": "{SESSION_ID from SESSION_DIR path suffix}",
+  "timestamp": "{current UTC ISO 8601}",
+  "command": "consensus:code-review",
+  "target": "{short description of review target}",
+  "review_type": "CODE_REVIEW",
+  "total_findings": "{count}",
+  "models": {
+    "{model-id}": {
+      "responded": "yes|failed|timeout",
+      "unique_findings": "{N}",
+      "consensus_findings": "{N}",
+      "convergence_vote": "APPROVE|CHANGES NEEDED|null",
+      "output_bytes": "{N}"
+    }
+  }
+}
+```
+
+### 11c: Append to JSON
+
+1. Read `~/.claude/multi-model-performance.json`. If it does not exist, create it with `{"version": 1, "runs": []}`.
+2. Parse JSON
+3. Check if `id` already exists in `runs[]` — if so, skip (dedup)
+4. Append run record to `runs[]`
+5. Write updated JSON back
+
+Report: `"Performance tracked: {total_findings} findings across {M} models. {len(runs)} total runs recorded."`
 
 ## Rules
 
