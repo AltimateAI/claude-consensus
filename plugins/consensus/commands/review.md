@@ -298,7 +298,7 @@ SESSION_DIR={SESSION_DIR}
    codex exec -s read-only {EXTRA_DIRS_FLAGS} -o $SESSION_DIR/{MODEL_ID}.md - < $SESSION_DIR/prompt.md
 
    **If `{MODEL_COMMAND}` starts with `gemini`:**
-   gemini {EXTRA_DIRS_FLAGS} -p "$(cat $SESSION_DIR/prompt.md)" --approval-mode plan > $SESSION_DIR/{MODEL_ID}.md 2>&1
+   gemini {EXTRA_DIRS_FLAGS} -p "$(cat $SESSION_DIR/prompt.md)" > $SESSION_DIR/{MODEL_ID}.md 2>&1
 
    **If `{MODEL_COMMAND}` starts with `qwen`:**
    qwen {EXTRA_DIRS_FLAGS} --approval-mode plan -p "$(cat $SESSION_DIR/prompt.md)" -o text > $SESSION_DIR/{MODEL_ID}.md 2>&1
@@ -324,7 +324,7 @@ After sending the review, WAIT. The lead will send you a convergence prompt. Whe
    codex exec resume --last - < $SESSION_DIR/convergence-prompt-{MODEL_ID}.md > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
 
    **If `{MODEL_COMMAND}` starts with `gemini`:**
-   gemini --resume latest -p "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" --approval-mode plan > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
+   gemini --resume latest -p "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
 
    **If `{MODEL_COMMAND}` starts with `qwen`:**
    qwen -c -p "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" -o text > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
