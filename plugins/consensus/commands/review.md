@@ -1,5 +1,5 @@
 ---
-name: review
+name: review-multi-model
 description: "Multi-model review — AI models independently review any document or general topic, then converge on findings"
 ---
 
