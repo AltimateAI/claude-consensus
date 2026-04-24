@@ -121,17 +121,17 @@ The 9 supported models and their CLI mappings:
 
 | Model ID | Name | OpenRouter (Kilo) | Native CLI |
 |----------|------|-------------------|------------|
-| `gpt` | GPT 5.4 Codex | `kilo run -m openrouter/openai/gpt-5.4-codex --auto` | `codex` (if codex CLI installed) |
+| `gpt` | GPT 5.4 Codex | `kilo run -m openrouter/openai/gpt-5.4-codex --auto` | `codex` (if codex CLI installed — note: native codex uses whatever model your `~/.codex/config.toml` specifies, e.g. `gpt-5.5`) |
 | `gemini` | Gemini 3.1 Pro | `kilo run -m openrouter/google/gemini-3.1-pro-preview --auto` | `gemini` (if gemini CLI installed) |
-| `kimi` | Kimi K2.5 | `kilo run -m openrouter/moonshotai/kimi-k2.5 --auto` | OpenRouter only |
-| `grok` | Grok 4 | `kilo run -m openrouter/x-ai/grok-4 --auto` | OpenRouter only |
+| `kimi` | Kimi K2.6 | `kilo run -m openrouter/moonshotai/kimi-k2.6 --auto` | OpenRouter only |
+| `grok` | Grok 4.20 | `kilo run -m openrouter/x-ai/grok-4.20-beta --auto` | OpenRouter only |
 | `minimax` | MiniMax M2.7 | `kilo run -m openrouter/minimax/minimax-m2.7 --auto` | OpenRouter only |
-| `glm5` | GLM-5 | `kilo run -m openrouter/z-ai/glm-5 --auto` | OpenRouter only |
-| `qwen` | Qwen 3.5 Plus | `kilo run -m openrouter/qwen/qwen3.5-plus-02-15 --auto` | `qwen` (if qwen CLI installed) |
-| `nemotron` | Nemotron 120B | `kilo run -m openrouter/nvidia/nemotron-3-super-120b-a12b --auto` | OpenRouter only |
+| `glm5` | GLM-5.1 | `kilo run -m zai-coding-plan/glm-5.1 --auto` | Z.ai direct only |
+| `qwen` | Qwen 3.6 Plus | `kilo run -m openrouter/qwen/qwen3.6-plus --auto` | `qwen` (if qwen CLI installed) |
 | `mimo` | MiMo V2 Pro | `kilo run -m openrouter/xiaomi/mimo-v2-pro --auto` | OpenRouter only |
+| `deepseek` | DeepSeek V4 Pro | `kilo run -m openrouter/deepseek/deepseek-v4-pro --auto` | OpenRouter only |
 
-**Note on native CLIs**: For `codex`, `gemini`, and `qwen`, set the config's `command` field to just `codex`, `gemini`, or `qwen`. The teammate template in the review/plan commands detects these and uses the correct native invocation patterns automatically (e.g., `codex exec -s read-only` for reviews, `codex exec resume --last` for convergence, `gemini -p` with `--approval-mode plan` for reviews, `gemini --resume latest` for convergence, `qwen --approval-mode plan -p` with `-o text` for reviews, `qwen -c -p` for convergence). The `resume_flag` field is ignored for native CLIs.
+**Note on native CLIs**: For `codex`, `gemini`, and `qwen`, set the config's `command` field to just `codex`, `gemini`, or `qwen`. The teammate template in the review/plan commands detects these and uses the correct native invocation patterns automatically (e.g., `codex exec -s read-only` for reviews, `codex exec resume --last` for convergence, `gemini -p` for reviews, `gemini --resume latest` for convergence, `qwen --approval-mode plan -p` with `-o text` for reviews, `qwen -c -p` for convergence). The `resume_flag` field is ignored for native CLIs.
 
 Determine which models are available:
 - **OpenRouter path**: All 9 available if `kilo` installed + API key set
@@ -148,19 +148,19 @@ AskUserQuestion:
       description: "{available via OpenRouter / available via codex CLI / not available}"
     - label: "Gemini 3.1 Pro"
       description: "{available via OpenRouter / available via gemini CLI / not available}"
-    - label: "Kimi K2.5"
+    - label: "Kimi K2.6"
       description: "{available via OpenRouter / not available}"
-    - label: "Grok 4"
+    - label: "Grok 4.20"
       description: "{available via OpenRouter / not available}"
     - label: "MiniMax M2.7"
       description: "{available via OpenRouter / not available}"
-    - label: "GLM-5"
-      description: "{available via OpenRouter / not available}"
-    - label: "Qwen 3.5 Plus"
+    - label: "GLM-5.1"
+      description: "{available via Z.ai coding plan / not available}"
+    - label: "Qwen 3.6 Plus"
       description: "{available via OpenRouter / available via qwen CLI / not available}"
-    - label: "Nemotron 120B"
-      description: "{available via OpenRouter / not available}"
     - label: "MiMo V2 Pro"
+      description: "{available via OpenRouter / not available}"
+    - label: "DeepSeek V4 Pro"
       description: "{available via OpenRouter / not available}"
 ```
 
