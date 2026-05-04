@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.0] - 2026-04-24
+
+### Added
+
+- **DeepSeek V4 Pro** as 9th model (`openrouter/deepseek/deepseek-v4-pro`)
+
+### Changed
+
+- Upgrade to latest model versions across the panel:
+  - Kimi K2.5 -> K2.6 (`openrouter/moonshotai/kimi-k2.6`)
+  - Grok 4 -> Grok 4.20 (`openrouter/x-ai/grok-4.20-beta` — Kilo maps OpenRouter's `x-ai/grok-4.20` under the `-beta` suffix in its model registry)
+  - Qwen 3.5 Plus -> Qwen 3.6 Plus (`openrouter/qwen/qwen3.6-plus`)
+  - GLM-5 -> GLM-5.1 (`zai-coding-plan/glm-5.1`)
+- Default minimum quorum raised to 10 (100% — all 9 models + Claude must respond)
+
+### Removed
+
+- Nemotron 120B model — low contribution on unique findings, dropped from default panel
+
+### Migration
+
+Users with existing `~/.claude/consensus.json` should re-run `/consensus-setup` or manually remove
+the `nemotron` entry. Qwen users on the broken `qwen3.6:free` path should update to
+`openrouter/qwen/qwen3.6-plus` (paid tier; no free `qwen3.6` variant is available).
+
 ## [1.2.0] - 2026-03-30
 
 ### Added

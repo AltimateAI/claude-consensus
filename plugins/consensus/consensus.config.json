@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.3.0",
   "models": [
     {
       "id": "gpt",
@@ -17,15 +17,15 @@
     },
     {
       "id": "kimi",
-      "name": "Kimi K2.5",
-      "command": "kilo run -m openrouter/moonshotai/kimi-k2.5 --auto",
+      "name": "Kimi K2.6",
+      "command": "kilo run -m openrouter/moonshotai/kimi-k2.6 --auto",
       "resume_flag": "-c",
       "enabled": true
     },
     {
       "id": "grok",
-      "name": "Grok 4",
-      "command": "kilo run -m openrouter/x-ai/grok-4 --auto",
+      "name": "Grok 4.20",
+      "command": "kilo run -m openrouter/x-ai/grok-4.20-beta --auto",
       "resume_flag": "-c",
       "enabled": true
     },
@@ -38,22 +38,15 @@
     },
     {
       "id": "glm5",
-      "name": "GLM-5",
-      "command": "kilo run -m openrouter/z-ai/glm-5 --auto",
+      "name": "GLM-5.1",
+      "command": "kilo run -m zai-coding-plan/glm-5.1 --auto",
       "resume_flag": "-c",
       "enabled": true
     },
     {
       "id": "qwen",
-      "name": "Qwen 3.5 Plus",
-      "command": "kilo run -m openrouter/qwen/qwen3.5-plus-02-15 --auto",
-      "resume_flag": "-c",
-      "enabled": true
-    },
-    {
-      "id": "nemotron",
-      "name": "Nemotron 120B",
-      "command": "kilo run -m openrouter/nvidia/nemotron-3-super-120b-a12b --auto",
+      "name": "Qwen 3.6 Plus",
+      "command": "kilo run -m openrouter/qwen/qwen3.6-plus --auto",
       "resume_flag": "-c",
       "enabled": true
     },
@@ -63,7 +56,15 @@
       "command": "kilo run -m openrouter/xiaomi/mimo-v2-pro --auto",
       "resume_flag": "-c",
       "enabled": true
+    },
+    {
+      "id": "deepseek",
+      "name": "DeepSeek V4 Pro",
+      "command": "kilo run -m openrouter/deepseek/deepseek-v4-pro --auto",
+      "resume_flag": "-c",
+      "enabled": true
     }
   ],
-  "min_quorum": 6
+  "min_quorum": 10,
+  "performance_tracking": false
 }
