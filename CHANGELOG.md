@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.5.0] - 2026-05-04
+
+### Added
+
+- Code review prompt now requires reviewers to trace **unintended consequences** of the change (callers, downstream consumers, tests locking obsolete behavior, contract changes, performance, security boundaries, public APIs/CLIs/configs). Reviewers must explicitly state "None found — searched callers, tests, and downstream consumers." when nothing surfaces — silence is not an acceptable answer.
+- New **Unintended Consequences** section in the synthesized review output. If the panel collectively reported nothing, the section reads `> **None found.**` rather than being omitted, so the reader knows the check was actually performed.
+
 ## [1.4.0] - 2026-04-24
 
 ### Added

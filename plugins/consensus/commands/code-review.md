@@ -158,6 +158,7 @@ Also provide:
 - **Overall assessment**: Is this code ready to merge? What's the overall quality?
 - **Positive observations**: What's done well (good patterns, clean code, etc.)
 - **Missing tests**: Any untested paths or edge cases
+- **Unintended consequences**: Trace the ripple effects of this change. What else in the codebase depends on the modified behavior, signature, side-effect, schema, contract, or invariant? Look for: callers that assumed the old behavior, downstream consumers of changed return types/payloads, tests that lock in obsolete behavior, migrations or feature flags that interact, performance regressions in hot paths, security boundaries that shift, public APIs/CLIs/configs whose contract is now broken. If you find none after explicit checking, write exactly: "None found — searched callers, tests, and downstream consumers." Do NOT skip this section. An empty/clean result is a valid finding when stated explicitly.
 
 Be specific and opinionated. Flag real issues, not style preferences. Prioritize correctness and security over cosmetics.
 ```
@@ -378,6 +379,17 @@ Format:
 
 ### Missing Tests
 - {Untested paths}
+
+### Unintended Consequences
+{Synthesize the panel's "unintended consequences" findings. If any reviewer identified a real ripple effect — broken caller, stale test, downstream consumer, contract change, performance regression, security boundary shift — list each one with: what breaks, where, and which models flagged it. If every reviewer reported "None found — searched callers, tests, and downstream consumers." (or equivalent), write exactly:}
+
+> **None found.** All {N} reviewers searched callers, tests, and downstream consumers and reported no ripple effects.
+
+{Otherwise list:}
+1. **{Affected location}** — {file}:{line or scope}
+   {What breaks and why}
+   **Mitigation**: {what should be done before merge}
+   _Flagged by: {models}_
 ```
 
 ## Step 7: Convergence Round — Get Agreement
