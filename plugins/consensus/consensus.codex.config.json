@@ -1,18 +1,20 @@
 {
   "version": "1.6.0",
+  "lead": {
+    "id": "codex",
+    "name": "Codex",
+    "excluded_model_ids": [
+      "gpt",
+      "codex"
+    ],
+    "note": "Codex is the lead reviewer in Codex sessions, so do not invoke Codex/GPT as an external panelist."
+  },
   "models": [
-    {
-      "id": "gpt",
-      "name": "GPT 5.4 Codex",
-      "command": "kilo run -m openrouter/openai/gpt-5.4-codex --auto",
-      "resume_flag": "-c",
-      "enabled": true
-    },
     {
       "id": "gemini",
       "name": "Gemini 3.1 Pro",
-      "command": "kilo run -m openrouter/google/gemini-3.1-pro-preview --auto",
-      "resume_flag": "-c",
+      "command": "gemini",
+      "resume_flag": "",
       "enabled": true
     },
     {
@@ -27,7 +29,7 @@
       "name": "Grok 4.20",
       "command": "kilo run -m openrouter/x-ai/grok-4.20-beta --auto",
       "resume_flag": "-c",
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "minimax",
@@ -65,6 +67,6 @@
       "enabled": true
     }
   ],
-  "min_quorum": 10,
+  "min_quorum": 8,
   "performance_tracking": false
 }

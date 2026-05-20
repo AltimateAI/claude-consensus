@@ -208,7 +208,7 @@ Write the config to `~/.claude/consensus.json` using the Write tool:
 
 ```json
 {
-  "version": "1.0.0",
+  "version": "1.6.0",
   "models": [
     {
       "id": "{model_id}",
@@ -252,7 +252,7 @@ Report results:
 
 - GPT 5.4 Codex: PASS
 - Gemini 3.1 Pro: PASS
-- Kimi K2.5: FAIL — {error or empty output}
+- Kimi K2.6: FAIL — {error or empty output}
 - ...
 ```
 
