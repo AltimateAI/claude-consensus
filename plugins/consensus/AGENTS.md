@@ -1,26 +1,58 @@
-# Claude Consensus Plugin
+# Consensus Plugin
 
-This is a Claude Code plugin that provides multi-model code review and plan review commands.
-Do not modify the command files without understanding the full team-based execution flow.
+This plugin supports two hosts:
 
-## Configuration
+- Claude Code commands in `commands/`
+- Codex skills in `skills/`
 
-Commands load model configuration from (in order of priority):
-1. `~/.claude/consensus.json` — user config created by `/consensus-setup`
-2. `plugins/consensus/consensus.config.json` — plugin defaults
+Do not modify the command or skill files without understanding the full multi-model execution flow. The same product behavior is implemented differently per host because Claude Code command files can use Claude-native team primitives, while Codex skills run a Codex-led workflow with direct CLI subprocess collection.
 
-If neither config exists, commands abort with a message to run `/consensus-setup`.
+## Claude Configuration
 
-Run `/consensus-setup` to configure which models to use, provider (OpenRouter vs native CLIs), and quorum.
+Claude commands load model configuration from:
 
-## How It Works
+1. `~/.claude/consensus.json` - user config created by `/consensus-setup`
+2. `plugins/consensus/consensus.config.json` - Claude plugin defaults
 
-Each command dynamically spawns teammates based on the loaded config. The teammate template is generic — model-specific details (CLI command, resume flag, output file names) come from the config's `command`, `resume_flag`, and `id` fields. Native CLIs (`codex`, `gemini`) are handled as special cases in the template since they have different invocation patterns than the standard Kilo/OpenRouter path.
+Claude is always the lead participant. Native CLIs (`codex`, `gemini`, `qwen`) are handled as special cases in the command templates.
 
-At runtime, commands verify CLI availability for each configured model and skip unavailable ones. If the remaining models (+ Claude) don't meet `min_quorum`, the command aborts with a clear message.
+## Codex Configuration
 
-## Commands
+Codex skills load model configuration from:
 
-- `/consensus-setup` — Interactive setup wizard for models, API keys, and quorum
-- `/code-review` — Multi-model code review with consensus convergence
-- `/plan-review` — Multi-model plan review with consensus convergence
+1. `~/.codex/consensus.json` - user config created by `consensus-setup`
+2. `plugins/consensus/consensus.codex.config.json` - Codex plugin defaults
+
+Codex is always the lead participant. Codex/GPT must not be invoked as an external panelist, even if a user config contains a stale `gpt` or `codex` entry.
+
+Codex setup may read `~/.claude/.env` as a fallback source for `OPENROUTER_API_KEY`, but it must not write `~/.claude/consensus.json`.
+
+## Runtime Rules
+
+At runtime, workflows verify CLI availability for each configured model and skip unavailable ones. If the remaining host lead plus external models do not meet `min_quorum`, the workflow aborts with a clear message.
+
+The final synthesis must preserve:
+
+- independent first-pass reviews or plans
+- comparison tables
+- consensus and unique findings
+- conflicts and unresolved disagreements
+- convergence rounds
+- attribution tables
+
+## Public Entrypoints
+
+Claude commands:
+
+- `/consensus-setup`
+- `/code-review`
+- `/plan-review`
+- `/consensus:review`
+
+Codex skills:
+
+- `consensus-setup`
+- `consensus-code-review`
+- `consensus-plan-review`
+- `consensus-review`
+- aliases: `code-review`, `plan-review`, `plan-reviwe`, `claude-consensus`

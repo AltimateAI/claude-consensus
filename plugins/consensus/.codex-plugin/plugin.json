@@ -1,0 +1,41 @@
+{
+  "name": "consensus",
+  "version": "1.6.0",
+  "description": "Codex-led multi-model code review, plan review, and general review with consensus convergence",
+  "author": {
+    "name": "AltimateAI",
+    "email": "support@altimate.ai",
+    "url": "https://altimate.ai/"
+  },
+  "homepage": "https://github.com/AltimateAI/claude-consensus",
+  "repository": "https://github.com/AltimateAI/claude-consensus",
+  "license": "MIT",
+  "keywords": [
+    "code-review",
+    "plan-review",
+    "review",
+    "multi-model",
+    "consensus",
+    "configurable",
+    "coderabbit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Consensus",
+    "shortDescription": "Codex-led multi-model reviews and plans",
+    "longDescription": "Run Codex-led consensus workflows where external models independently review code, implementation plans, documents, or general proposals, then converge through synthesis and approval rounds.",
+    "developerName": "AltimateAI",
+    "category": "Coding",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/AltimateAI/claude-consensus",
+    "defaultPrompt": [
+      "Run a consensus code review of staged changes",
+      "Run a consensus plan review for this task",
+      "Configure the Codex consensus panel"
+    ],
+    "brandColor": "#6D28D9"
+  }
+}

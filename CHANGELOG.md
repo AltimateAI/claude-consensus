@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.6.0] - 2026-05-20
+
+### Added
+
+- Codex plugin support via `plugins/consensus/.codex-plugin/plugin.json`.
+- Repo-local Codex marketplace entry at `.agents/plugins/marketplace.json`.
+- Codex skills for setup, code review, plan review, general review, and compatibility aliases.
+- Codex-specific default config at `plugins/consensus/consensus.codex.config.json`, with Codex as lead, Codex/GPT excluded from the external panel, and defaults aligned with the existing `~/.codex/consensus.json` setup.
+
+### Changed
+
+- README and plugin docs now cover both Claude Code and Codex installation, configuration, and runtime behavior.
+- Plugin metadata bumped to v1.6.0.
+
 ## [1.5.1] - 2026-05-05
 
 ### Added
