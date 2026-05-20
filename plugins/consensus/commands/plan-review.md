@@ -142,6 +142,7 @@ Create a detailed implementation plan. Include:
 3. **Key decisions** — architectural choices and why
 4. **Edge cases** — what could go wrong and how to handle it
 5. **Verification** — how to confirm the implementation works
+6. **Unintended consequences** — Trace ripple effects of executing this plan as written. What else in the codebase, schema, infrastructure, or workflows could break? Look for: callers/consumers of any signature or contract you propose to change, tests that lock in behavior the plan replaces, database migrations or schemas that interact with proposed data-model changes, feature-flag or rollout-state interactions, performance regressions in hot paths, security boundaries or auth assumptions that shift, public APIs/CLIs/configs/docs that become inconsistent, in-flight branches or PRs that touch the same area, and operational concerns (telemetry, alerting, dashboards) that depend on the current behavior. If, after explicit checking, you find none, write exactly: "None found — searched callers, tests, downstream consumers, and adjacent work." Do NOT skip this section. An empty/clean result is a valid finding when stated explicitly.
 
 Be specific and opinionated. Give your best plan, not multiple options.
 ```
@@ -176,6 +177,7 @@ Create a detailed implementation plan. Include:
 3. **Key decisions** — architectural choices and why
 4. **Edge cases** — what could go wrong and how to handle it
 5. **Verification** — how to confirm the implementation works
+6. **Unintended consequences** — Trace ripple effects of executing this plan as written. What else in the codebase, schema, infrastructure, or workflows could break? Look for: callers/consumers of any signature or contract you propose to change, tests that lock in behavior the plan replaces, database migrations or schemas that interact with proposed data-model changes, feature-flag or rollout-state interactions, performance regressions in hot paths, security boundaries or auth assumptions that shift, public APIs/CLIs/configs/docs that become inconsistent, in-flight branches or PRs that touch the same area, and operational concerns (telemetry, alerting, dashboards) that depend on the current behavior. If, after explicit checking, you find none, write exactly: "None found — searched callers, tests, downstream consumers, and adjacent work." Do NOT skip this section. An empty/clean result is a valid finding when stated explicitly.
 
 Be specific and opinionated. Give your best plan, not multiple options.
 ```
@@ -357,6 +359,16 @@ Build a single unified plan:
 2. Incorporate **valuable unique insights** from individual models (with reasoning for inclusion)
 3. For **conflicts**, pick the best approach with explicit reasoning
 4. Organize into a clear, implementable plan
+5. **Consolidate the panel's "Unintended consequences" findings** into a single top-level section in the draft.
+
+The draft MUST include a clearly-marked section titled `### Unintended Consequences` near the end (before any provenance footer). Format:
+
+- If at least one reviewer identified a real ripple effect — broken caller/consumer, stale test, contract or schema change, conflicting in-flight work, performance/security/operational regression — list each one with: what breaks, where, mitigation, and which models flagged it.
+- If every reviewer reported "None found — searched callers, tests, downstream consumers, and adjacent work." (or equivalent wording), write exactly:
+
+  > **None found.** All {N} reviewers searched callers, tests, downstream consumers, and adjacent work and reported no ripple effects.
+
+Do NOT omit this section. An explicit "None found" line is the positive signal that the check was actually performed by every reviewer.
 
 Write the draft to `$SESSION_DIR/draft.md`.
 

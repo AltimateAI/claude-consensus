@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.5.1] - 2026-05-05
+
+### Added
+
+- Plan review now includes the same **unintended consequences** check that was added to code review in v1.5.0. Plan-review prompt requires each reviewer to trace ripple effects of executing the plan as written (callers, contracts, schemas, in-flight work, performance, security, operational concerns). Reviewers must explicitly state "None found — searched callers, tests, downstream consumers, and adjacent work." when nothing surfaces.
+- Synthesized plan output now contains a top-level `### Unintended Consequences` section. When the panel collectively reported nothing, it renders `> **None found.** All N reviewers searched callers, tests, downstream consumers, and adjacent work and reported no ripple effects.` — explicit confirmation rather than an omitted heading.
+
 ## [1.5.0] - 2026-05-04
 
 ### Added
