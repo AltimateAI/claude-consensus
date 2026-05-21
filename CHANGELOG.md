@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.7.0] - 2026-05-20
+
+### Changed
+
+- Native Google/Gemini execution now uses Antigravity CLI (`agy`) instead of the retiring Gemini CLI.
+- Claude command templates and Codex skill references route `gemini` model entries through `agy --sandbox -p`; convergence uses a fresh Antigravity prompt because `agy --continue -p` can include prior output before the new answer.
+- Codex default config now keeps the stable `gemini` model id but uses `command: "agy"` and the display name `Gemini via Antigravity`.
+- Setup docs now detect `agy` and treat bare `gemini` command values as legacy configs to migrate.
+- Plugin metadata bumped to v1.7.0.
+
 ## [1.6.0] - 2026-05-20
 
 ### Added
