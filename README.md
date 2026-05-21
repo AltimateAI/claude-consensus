@@ -63,7 +63,7 @@ Alias skills are also provided for `code-review`, `plan-review`, `plan-reviwe`, 
 | Claude Code or Codex | Yes | The host environment determines the lead reviewer |
 | Kilo CLI | Recommended | Routes OpenRouter models with one API key |
 | OpenRouter API key | Recommended | Required for Kilo/OpenRouter models |
-| Native CLIs | Optional | Claude supports `codex`, `gemini`, and `qwen`; Codex supports non-Codex native CLIs |
+| Native CLIs | Optional | Claude supports `codex`, Antigravity CLI (`agy`), and `qwen`; Codex supports non-Codex native CLIs |
 | CodeRabbit CLI | Optional | Supplementary static analysis for code reviews |
 
 **Minimal setup**: the host lead plus 1 external model is enough for consensus reviews.
@@ -74,7 +74,7 @@ Alias skills are also provided for `code-review`, `plan-review`, `plan-reviwe`, 
 |-------|----------|---------------|---------------|----------------|
 | Claude | Anthropic | built-in | lead | not used |
 | Codex / GPT | OpenAI | `openai/gpt-5.4-codex` | `codex` | lead, not external |
-| Gemini 3.1 Pro | Google | `google/gemini-3.1-pro-preview` | `gemini` | `gemini` |
+| Gemini 3.1 Pro | Google | `google/gemini-3.1-pro-preview` | Antigravity CLI (`agy`) | Antigravity CLI (`agy`) |
 | Kimi K2.6 | Moonshot | `moonshotai/kimi-k2.6` | Kilo | Kilo |
 | Grok 4.20 | xAI | `x-ai/grok-4.20-beta` | Kilo | Kilo, disabled by default |
 | MiniMax M2.7 | MiniMax | `minimax/minimax-m2.7` | Kilo | Kilo |
@@ -98,7 +98,7 @@ Example Codex config:
 
 ```json
 {
-  "version": "1.6.0",
+  "version": "1.7.0",
   "lead": {
     "id": "codex",
     "name": "Codex",
@@ -107,8 +107,8 @@ Example Codex config:
   "models": [
     {
       "id": "gemini",
-      "name": "Gemini 3.1 Pro",
-      "command": "gemini",
+      "name": "Gemini via Antigravity",
+      "command": "agy",
       "resume_flag": "",
       "enabled": true
     },

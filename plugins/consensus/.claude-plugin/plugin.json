@@ -1,6 +1,6 @@
 {
   "name": "consensus",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Configurable multi-model code review, plan review, and general review with consensus convergence for Claude Code",
   "author": {
     "name": "AltimateAI"

@@ -1,5 +1,5 @@
 {
-  "version": "1.6.0",
+  "version": "1.7.0",
   "lead": {
     "id": "codex",
     "name": "Codex",
@@ -12,8 +12,8 @@
   "models": [
     {
       "id": "gemini",
-      "name": "Gemini 3.1 Pro",
-      "command": "gemini",
+      "name": "Gemini via Antigravity",
+      "command": "agy",
       "resume_flag": "",
       "enabled": true
     },
