@@ -51,6 +51,23 @@ TTL: 24h
 
 `$ARGUMENTS` = what to review. Examples: `~/.claude/plans/my-plan.md`, `the plan`, `docs/architecture.md`, or a free-text description like `"should we use Redis or Postgres for this queue?"`.
 
+### Additional Directories
+
+If the review spans multiple repositories, the user can pass `--dirs` to give all models access to additional directories:
+
+```
+/consensus:review docs/architecture.md --dirs /path/to/frontend,/path/to/backend
+```
+
+**Parsing `--dirs`:**
+1. Extract the `--dirs` value from `$ARGUMENTS` (everything after `--dirs` up to the next `--` flag or end of string)
+2. Split on commas to get a list of absolute paths -> store as `EXTRA_DIRS` array
+3. Remove the `--dirs ...` portion from `$ARGUMENTS` before input detection runs
+4. Validate each path exists with `test -d`. Warn and skip any that don't exist.
+5. If no `--dirs` flag is present, `EXTRA_DIRS` is empty.
+
+Store `EXTRA_DIRS` for use in Step 1 (prompt) and Step 3 (teammate template).
+
 ### Input Detection
 
 Auto-detect the review type from `$ARGUMENTS`:
@@ -93,13 +110,12 @@ After detection:
 
 Source the API key (targeted — only export `OPENROUTER_API_KEY`):
 ```bash
-[ -f ~/.claude/.env ] && export OPENROUTER_API_KEY=$(grep '^OPENROUTER_API_KEY=' ~/.claude/.env | cut -d= -f2- | tr -d '"')
+[ -f ~/.claude/.env ] && export OPENROUTER_API_KEY=$(python3 -c 'import os; print(next((l.split("=",1)[1].strip().strip(chr(34)) for l in open(os.path.expanduser("~/.claude/.env")) if l.startswith("OPENROUTER_API_KEY=")), ""))' 2>/dev/null)
 ```
 
 For each model in `MODELS`, verify CLI availability:
 - Commands starting with `kilo` -> check: `command -v kilo` AND `[ -n "$OPENROUTER_API_KEY" ]`
 - Commands starting with `codex` -> check: `command -v codex`
-- Commands starting with `gemini` -> check: `command -v gemini`
 - Commands starting with `qwen` -> check: `command -v qwen`
 
 Run all checks in parallel. Remove unavailable models from `MODELS` with a warning for each:
@@ -143,6 +159,12 @@ Read this document completely: `{FILE_PATH or .consensus-draft.md if copied to r
 
 **Verify claims against the actual codebase** — do not trust the document blindly. Check that referenced files, functions, APIs, and patterns actually exist and behave as described.
 
+{IF EXTRA_DIRS is non-empty, add this paragraph:}
+Additional repositories are available for context at these paths — explore them if the document references or depends on code there:
+{for each dir in EXTRA_DIRS:}
+- `{dir}`
+{end for}
+
 Evaluate against these 7 criteria:
 1. **Accuracy**: Are factual claims about the codebase correct? Do referenced files/functions exist?
 2. **Completeness**: Are there missing steps, unaddressed edge cases, or gaps?
@@ -181,6 +203,12 @@ I need your assessment of the following:
 ---
 
 You have full access to the codebase. Explore relevant files to validate claims and ground your assessment.
+
+{IF EXTRA_DIRS is non-empty, add this paragraph:}
+Additional repositories are available for context at these paths — explore them if the assessment references or depends on code there:
+{for each dir in EXTRA_DIRS:}
+- `{dir}`
+{end for}
 
 Evaluate against these 5 dimensions:
 1. **Correctness**: Are the claims, logic, or approach correct?
@@ -243,7 +271,14 @@ Task:
 
 ### TEAMMATE TEMPLATE
 
-For each model, substitute `{MODEL_ID}`, `{MODEL_NAME}`, `{MODEL_COMMAND}`, `{MODEL_RESUME_FLAG}`, and `{SESSION_DIR}` into this template:
+For each model, substitute `{MODEL_ID}`, `{MODEL_NAME}`, `{MODEL_COMMAND}`, `{MODEL_RESUME_FLAG}`, `{SESSION_DIR}`, and `{EXTRA_DIRS_FLAGS}` into this template.
+
+**Building `{EXTRA_DIRS_FLAGS}`** — if `EXTRA_DIRS` is non-empty, build per-CLI flags:
+- For commands starting with `codex`: `--add-dir /path1 --add-dir /path2` (one `--add-dir` per directory)
+- For commands starting with `qwen`: `--include-directories /path1,/path2` (comma-separated)
+- For commands starting with `kilo`: empty string.
+
+If `EXTRA_DIRS` is empty, `{EXTRA_DIRS_FLAGS}` is an empty string for all CLIs.
 
 ```
 You are {MODEL_ID}-reviewer on the review team. You run {MODEL_NAME} via CLI to get a review, then participate in convergence rounds.
@@ -254,17 +289,14 @@ SESSION_DIR={SESSION_DIR}
 
 1. Claim your task "Get {MODEL_NAME} review" via TaskUpdate (set status to in_progress)
 2. Source API key (only the key needed, not all env vars):
-   [ -f ~/.claude/.env ] && export OPENROUTER_API_KEY=$(grep '^OPENROUTER_API_KEY=' ~/.claude/.env | cut -d= -f2- | tr -d '"')
+   [ -f ~/.claude/.env ] && export OPENROUTER_API_KEY=$(python3 -c 'import os; print(next((l.split("=",1)[1].strip().strip(chr(34)) for l in open(os.path.expanduser("~/.claude/.env")) if l.startswith("OPENROUTER_API_KEY=")), ""))' 2>/dev/null)
 3. Run the CLI command to get the review. Use the correct invocation for your CLI type:
 
    **If `{MODEL_COMMAND}` starts with `codex`:**
-   codex exec -s read-only -o $SESSION_DIR/{MODEL_ID}.md - < $SESSION_DIR/prompt.md
-
-   **If `{MODEL_COMMAND}` starts with `gemini`:**
-   gemini -p "$(cat $SESSION_DIR/prompt.md)" --approval-mode plan > $SESSION_DIR/{MODEL_ID}.md 2>&1
+   codex exec -s read-only {EXTRA_DIRS_FLAGS} -o $SESSION_DIR/{MODEL_ID}.md - < $SESSION_DIR/prompt.md
 
    **If `{MODEL_COMMAND}` starts with `qwen`:**
-   qwen --approval-mode plan -p "$(cat $SESSION_DIR/prompt.md)" -o text > $SESSION_DIR/{MODEL_ID}.md 2>&1
+   qwen {EXTRA_DIRS_FLAGS} --approval-mode plan -p "$(cat $SESSION_DIR/prompt.md)" -o text > $SESSION_DIR/{MODEL_ID}.md 2>&1
 
    **Otherwise (Kilo/OpenRouter — default):**
    {MODEL_COMMAND} "$(cat $SESSION_DIR/prompt.md)" > $SESSION_DIR/{MODEL_ID}.md 2>&1
@@ -285,9 +317,6 @@ After sending the review, WAIT. The lead will send you a convergence prompt. Whe
 
    **If `{MODEL_COMMAND}` starts with `codex`:**
    codex exec resume --last - < $SESSION_DIR/convergence-prompt-{MODEL_ID}.md > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
-
-   **If `{MODEL_COMMAND}` starts with `gemini`:**
-   gemini --resume latest -p "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" --approval-mode plan > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
 
    **If `{MODEL_COMMAND}` starts with `qwen`:**
    qwen -c -p "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" -o text > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
@@ -568,7 +597,7 @@ On failure: preserve `$SESSION_DIR` for debugging and tell the user where files 
 8. **Dynamic quorum.** Use `MIN_QUORUM` from config. Abort if fewer than `MIN_QUORUM` reviews available (including Claude).
 9. **Convergence through messaging.** Lead sends draft to teammates, they run their model and report back. Max 2 rounds.
 10. **No plan mode.** Reviews are presented directly, not written to plan files.
-11. **Be patient with teammates — they almost never fail.** External CLI models (Codex, Gemini, Kilo) take time to explore the codebase but almost always finish successfully. Follow this activity-based patience protocol:
+11. **Be patient with teammates — they almost never fail.** External CLI models (Codex, Kilo) take time to explore the codebase but almost always finish successfully. Follow this activity-based patience protocol:
     - **Poll output files** every ~1 minute using `wc -c < $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0` to check file size.
     - **Growing file (or no file yet)** = the model is working. Keep waiting.
     - **A teammate is ONLY considered stuck if**: their output file exists AND its size has not changed for **10 consecutive checks** (10 minutes of zero growth).

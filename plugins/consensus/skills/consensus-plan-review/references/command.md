@@ -27,7 +27,6 @@ fi
 Preflight:
 
 - commands starting with `kilo` require `command -v kilo` and a non-empty `OPENROUTER_API_KEY`
-- commands starting with `gemini` require `command -v gemini`
 - commands starting with `qwen` require `command -v qwen`
 - commands starting with `codex` must be skipped
 - never use `--yolo`
@@ -53,7 +52,6 @@ Support `--dirs /path/a,/path/b`:
 
 Directory flags:
 
-- native Gemini: `--include-directories /path/a,/path/b`
 - native Qwen: `--include-directories /path/a,/path/b`
 - Kilo/OpenRouter: no CLI flag; include paths in the prompt
 
@@ -112,12 +110,6 @@ Kilo/OpenRouter:
 
 ```bash
 {MODEL_COMMAND} "$(cat "$SESSION_DIR/prompt.md")" > "$SESSION_DIR/{MODEL_ID}.md" 2>&1
-```
-
-Native Gemini:
-
-```bash
-gemini --model "gemini-3.1-pro-preview" {EXTRA_DIRS_FLAGS} -p "$(cat "$SESSION_DIR/prompt.md")" --approval-mode plan > "$SESSION_DIR/{MODEL_ID}.md" 2>&1
 ```
 
 Native Qwen:
@@ -198,12 +190,6 @@ Kilo/OpenRouter:
 
 ```bash
 {MODEL_COMMAND} {MODEL_RESUME_FLAG} "$(cat "$SESSION_DIR/convergence-prompt.md")" > "$SESSION_DIR/{MODEL_ID}-convergence.md" 2>&1
-```
-
-Native Gemini:
-
-```bash
-gemini --resume latest -p "$(cat "$SESSION_DIR/convergence-prompt.md")" --approval-mode plan > "$SESSION_DIR/{MODEL_ID}-convergence.md" 2>&1
 ```
 
 Native Qwen:

@@ -39,10 +39,6 @@ command -v codex && echo "CODEX_OK" || echo "CODEX_MISSING"
 ```
 
 ```bash
-command -v gemini && echo "GEMINI_OK" || echo "GEMINI_MISSING"
-```
-
-```bash
 command -v qwen && echo "QWEN_OK" || echo "QWEN_MISSING"
 ```
 
@@ -59,7 +55,6 @@ Report findings to the user:
 
 - Kilo CLI: {installed / not found}
 - Codex CLI: {installed / not found}
-- Gemini CLI: {installed / not found}
 - Qwen CLI: {installed / not found}
 - OpenRouter API key: {found in ~/.claude/.env / not found}
 ```
@@ -72,9 +67,9 @@ AskUserQuestion:
   header: "Provider"
   options:
     - label: "OpenRouter (Recommended)"
-      description: "1 API key, all 9 models via Kilo CLI. Simplest setup."
+      description: "1 API key, all 7 models via Kilo CLI. Simplest setup."
     - label: "Native CLIs"
-      description: "Use codex, gemini, qwen CLIs directly where available. Requires each CLI installed separately."
+      description: "Use codex, qwen CLIs directly where available. Requires each CLI installed separately."
     - label: "Both"
       description: "Mix and match — use native CLIs where available, OpenRouter/Kilo for the rest."
 ```
@@ -117,25 +112,23 @@ If user provides a key, update `~/.claude/.env` idempotently:
 
 Build the model list based on provider choice and detected CLIs.
 
-The 9 supported models and their CLI mappings:
+The 7 supported models and their CLI mappings:
 
 | Model ID | Name | OpenRouter (Kilo) | Native CLI |
 |----------|------|-------------------|------------|
-| `gpt` | GPT 5.4 Codex | `kilo run -m openrouter/openai/gpt-5.4-codex --auto` | `codex` (if codex CLI installed — note: native codex uses whatever model your `~/.codex/config.toml` specifies, e.g. `gpt-5.5`) |
-| `gemini` | Gemini 3.1 Pro | `kilo run -m openrouter/google/gemini-3.1-pro-preview --auto` | `gemini` (if gemini CLI installed) |
+| `gpt` | GPT 5.5 | `kilo run -m openrouter/openai/gpt-5.5 --auto` | `codex` (if codex CLI installed) |
 | `kimi` | Kimi K2.6 | `kilo run -m openrouter/moonshotai/kimi-k2.6 --auto` | OpenRouter only |
 | `grok` | Grok 4.20 | `kilo run -m openrouter/x-ai/grok-4.20-beta --auto` | OpenRouter only |
 | `minimax` | MiniMax M2.7 | `kilo run -m openrouter/minimax/minimax-m2.7 --auto` | OpenRouter only |
-| `glm5` | GLM-5.1 | `kilo run -m zai-coding-plan/glm-5.1 --auto` | Z.ai direct only |
 | `qwen` | Qwen 3.6 Plus | `kilo run -m openrouter/qwen/qwen3.6-plus --auto` | `qwen` (if qwen CLI installed) |
 | `mimo` | MiMo V2 Pro | `kilo run -m openrouter/xiaomi/mimo-v2-pro --auto` | OpenRouter only |
 | `deepseek` | DeepSeek V4 Pro | `kilo run -m openrouter/deepseek/deepseek-v4-pro --auto` | OpenRouter only |
 
-**Note on native CLIs**: For `codex`, `gemini`, and `qwen`, set the config's `command` field to just `codex`, `gemini`, or `qwen`. The teammate template in the review/plan commands detects these and uses the correct native invocation patterns automatically (e.g., `codex exec -s read-only` for reviews, `codex exec resume --last` for convergence, `gemini -p` for reviews, `gemini --resume latest` for convergence, `qwen --approval-mode plan -p` with `-o text` for reviews, `qwen -c -p` for convergence). The `resume_flag` field is ignored for native CLIs.
+**Note on native CLIs**: For `codex` and `qwen`, set the config's `command` field to just `codex` or `qwen`. The teammate template in the review/plan commands detects these and uses the correct native invocation patterns automatically (e.g., `codex exec -s read-only` for reviews, `codex exec resume --last` for convergence, `qwen --approval-mode plan -p` with `-o text` for reviews, `qwen -c -p` for convergence). The `resume_flag` field is ignored for native CLIs.
 
 Determine which models are available:
-- **OpenRouter path**: All 9 available if `kilo` installed + API key set
-- **Native path**: Only `gpt` (if codex installed), `gemini` (if gemini installed), and `qwen` (if qwen installed)
+- **OpenRouter path**: All 7 available if `kilo` installed + API key set
+- **Native path**: Only `gpt` (if codex installed) and `qwen` (if qwen installed)
 - **Both path**: Native CLI where available, OpenRouter/Kilo for the rest
 
 ```
@@ -144,18 +137,14 @@ AskUserQuestion:
   header: "Models"
   multiSelect: true
   options:
-    - label: "GPT 5.4 Codex"
+    - label: "GPT 5.5"
       description: "{available via OpenRouter / available via codex CLI / not available}"
-    - label: "Gemini 3.1 Pro"
-      description: "{available via OpenRouter / available via gemini CLI / not available}"
     - label: "Kimi K2.6"
       description: "{available via OpenRouter / not available}"
     - label: "Grok 4.20"
       description: "{available via OpenRouter / not available}"
     - label: "MiniMax M2.7"
       description: "{available via OpenRouter / not available}"
-    - label: "GLM-5.1"
-      description: "{available via Z.ai coding plan / not available}"
     - label: "Qwen 3.6 Plus"
       description: "{available via OpenRouter / available via qwen CLI / not available}"
     - label: "MiMo V2 Pro"
@@ -164,7 +153,7 @@ AskUserQuestion:
       description: "{available via OpenRouter / not available}"
 ```
 
-(Show all 9 models. Mark unavailable ones clearly. Pre-select available ones.)
+(Show all 7 models. Mark unavailable ones clearly. Pre-select available ones.)
 
 **Enforce: at least 1 external model must be selected.** If user selects none, tell them: "At least 1 external model is required for consensus reviews."
 
@@ -196,7 +185,7 @@ Constraints:
 
 Build the config JSON based on selections from Steps 3-6.
 
-For each of the 9 models:
+For each of the 7 models:
 - If the model was selected: set `enabled: true` and populate `command`/`resume_flag` based on provider choice
 - If the model was NOT selected: set `enabled: false` with the default OpenRouter command (so users can re-enable later)
 
@@ -229,14 +218,14 @@ Write the config to `~/.claude/consensus.json` using the Write tool:
 }
 ```
 
-All 9 models are always written to the config — enabled or disabled.
+All 7 models are always written to the config — enabled or disabled.
 
 ## Step 8: Smoke Test
 
 For each enabled model, run a quick test:
 
 ```bash
-[ -f ~/.claude/.env ] && export OPENROUTER_API_KEY=$(grep '^OPENROUTER_API_KEY=' ~/.claude/.env | cut -d= -f2- | tr -d '"')
+[ -f ~/.claude/.env ] && export OPENROUTER_API_KEY=$(python3 -c 'import os; print(next((l.split("=",1)[1].strip().strip(chr(34)) for l in open(os.path.expanduser("~/.claude/.env")) if l.startswith("OPENROUTER_API_KEY=")), ""))' 2>/dev/null)
 {model.command} "Reply with exactly: PONG" 2>&1 | head -20
 ```
 
@@ -250,8 +239,7 @@ Report results:
 ```
 ## Smoke Test Results
 
-- GPT 5.4 Codex: PASS
-- Gemini 3.1 Pro: PASS
+- GPT 5.5: PASS
 - Kimi K2.6: FAIL — {error or empty output}
 - ...
 ```
@@ -290,12 +278,12 @@ Print the final summary:
 
 ## Rules
 
-1. **9 fixed models only.** Do not offer custom model configuration. The wizard supports exactly the 9 models listed above.
+1. **7 fixed models only.** Do not offer custom model configuration. The wizard supports exactly the 7 models listed above.
 2. **Idempotent .env updates.** When writing API keys, preserve all existing keys in the file. Only add/update the `OPENROUTER_API_KEY` line.
-3. **Native CLI support for codex, gemini, and qwen.** When a user selects native CLIs, set the config's `command` field to `codex`, `gemini`, or `qwen`. The teammate template in the review/plan commands handles the full invocation patterns automatically. All other models use OpenRouter/Kilo only.
-4. **OpenRouter is the recommended path.** 1 key = 9 models. Emphasize this as the simplest setup.
+3. **Native CLI support for codex and qwen.** When a user selects native CLIs, set the config's `command` field to `codex` or `qwen`. The teammate template in the review/plan commands handles the full invocation patterns automatically. All other models use OpenRouter/Kilo only.
+4. **OpenRouter is the recommended path.** 1 key = 7 models. Emphasize this as the simplest setup.
 5. **Enforce minimum 1 external model.** Claude alone is not a consensus.
 6. **Hard-stop on quorum failure.** Never finalize a config that can't meet its own quorum.
 7. **User config location is `~/.claude/consensus.json`.** The plugin default at `plugins/consensus/consensus.config.json` is the fallback only.
-8. **Write all 9 models to config.** Include disabled models with `enabled: false` so users can re-enable them later without re-running setup.
+8. **Write all 7 models to config.** Include disabled models with `enabled: false` so users can re-enable them later without re-running setup.
 9. **Targeted API key sourcing.** Only export `OPENROUTER_API_KEY` from `~/.claude/.env`, never export all variables.

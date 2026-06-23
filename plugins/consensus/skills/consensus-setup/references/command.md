@@ -26,7 +26,6 @@ Check:
 ```bash
 test -f ~/.codex/consensus.json && jq . ~/.codex/consensus.json
 command -v kilo
-command -v gemini
 command -v qwen
 test -f ~/.codex/.env && grep -q '^OPENROUTER_API_KEY=.\+' ~/.codex/.env
 test -f ~/.claude/.env && grep -q '^OPENROUTER_API_KEY=.\+' ~/.claude/.env
@@ -37,7 +36,7 @@ Report:
 - whether `~/.codex/consensus.json` exists and parses
 - enabled external models
 - configured quorum
-- Kilo, Gemini, and Qwen availability
+- Kilo and Qwen availability
 - whether an OpenRouter key exists in `~/.codex/.env` or fallback `~/.claude/.env`
 
 If the existing config is valid and the user only asked to inspect, stop after the summary.
@@ -48,11 +47,9 @@ Use these model mappings:
 
 | ID | Name | Default command | Native alternative |
 |----|------|-----------------|--------------------|
-| `gemini` | Gemini 3.1 Pro | `kilo run -m openrouter/google/gemini-3.1-pro-preview --auto` | `gemini` |
 | `kimi` | Kimi K2.6 | `kilo run -m openrouter/moonshotai/kimi-k2.6 --auto` | none |
 | `grok` | Grok 4.20 | `kilo run -m openrouter/x-ai/grok-4.20-beta --auto` | none |
 | `minimax` | MiniMax M2.7 | `kilo run -m openrouter/minimax/minimax-m2.7 --auto` | none |
-| `glm5` | GLM-5.1 | `kilo run -m zai-coding-plan/glm-5.1 --auto` | none |
 | `qwen` | Qwen 3.6 Plus | `kilo run -m openrouter/qwen/qwen3.6-plus --auto` | optional `qwen`, disabled by default unless user asks |
 | `mimo` | MiMo V2 Pro | `kilo run -m openrouter/xiaomi/mimo-v2-pro --auto` | none |
 | `deepseek` | DeepSeek V4 Pro | `kilo run -m openrouter/deepseek/deepseek-v4-pro --auto` | none |
@@ -61,11 +58,10 @@ Codex setup intentionally omits the Claude plugin's `gpt` model because Codex/GP
 
 Recommended defaults:
 
-- enable the current stable non-Codex panel: Gemini, Kimi, MiniMax, GLM-5.1, Qwen, MiMo, and DeepSeek
+- enable the current stable non-Codex panel: Kimi, MiniMax, Qwen, MiMo, and DeepSeek
 - leave Grok disabled by default unless the user explicitly enables it
-- use native Gemini when `gemini` is installed; review workflows pin it with `--model "gemini-3.1-pro-preview"`
-- use Kilo/OpenRouter for the rest
-- set quorum to 8 for the default panel, meaning all 7 enabled externals plus Codex must respond
+- use Kilo/OpenRouter for all enabled models
+- set quorum to 6 for the default panel, meaning all 5 enabled externals plus Codex must respond
 
 For custom panels, keep quorum within these bounds:
 
@@ -103,10 +99,10 @@ Write `~/.codex/consensus.json` with this shape:
   },
   "models": [
     {
-      "id": "gemini",
-      "name": "Gemini 3.1 Pro",
-      "command": "gemini",
-      "resume_flag": "",
+      "id": "kimi",
+      "name": "Kimi K2.6",
+      "command": "kilo run -m openrouter/moonshotai/kimi-k2.6 --auto",
+      "resume_flag": "-c",
       "enabled": true
     }
   ],
@@ -115,13 +111,11 @@ Write `~/.codex/consensus.json` with this shape:
 }
 ```
 
-Include all 8 non-Codex external models, with `enabled` reflecting the user's selected panel.
+Include all 6 non-Codex external models, with `enabled` reflecting the user's selected panel.
 
-Use the selected quorum. The default Codex panel uses `min_quorum: 8`.
+Use the selected quorum. The default Codex panel uses `min_quorum: 6`.
 
 For enabled Kilo models, use `resume_flag: "-c"`.
-
-For native Gemini, use `command: "gemini"` and `resume_flag: ""`.
 
 For native Qwen, only use `command: "qwen"` if the user explicitly selects native Qwen; otherwise prefer Kilo/OpenRouter.
 

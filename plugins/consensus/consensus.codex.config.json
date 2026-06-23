@@ -11,13 +11,6 @@
   },
   "models": [
     {
-      "id": "gemini",
-      "name": "Gemini 3.1 Pro",
-      "command": "gemini",
-      "resume_flag": "",
-      "enabled": true
-    },
-    {
       "id": "kimi",
       "name": "Kimi K2.6",
       "command": "kilo run -m openrouter/moonshotai/kimi-k2.6 --auto",
@@ -35,13 +28,6 @@
       "id": "minimax",
       "name": "MiniMax M2.7",
       "command": "kilo run -m openrouter/minimax/minimax-m2.7 --auto",
-      "resume_flag": "-c",
-      "enabled": true
-    },
-    {
-      "id": "glm5",
-      "name": "GLM-5.1",
-      "command": "kilo run -m zai-coding-plan/glm-5.1 --auto",
       "resume_flag": "-c",
       "enabled": true
     },
@@ -67,6 +53,6 @@
       "enabled": true
     }
   ],
-  "min_quorum": 8,
+  "min_quorum": 6,
   "performance_tracking": false
 }

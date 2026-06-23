@@ -1,6 +1,6 @@
 ---
 name: plan-review
-description: Alias for Codex-led consensus plan review. Use when the user invokes plan-review, asks to run plan review, or requests /plan-reviwe.
+description: Alias for Codex-led consensus plan review. Use when the user invokes plan-review or asks to run plan review.
 metadata:
   short-description: Alias for consensus plan review
 ---
