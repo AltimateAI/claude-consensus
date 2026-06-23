@@ -16,7 +16,7 @@ Never write `~/.claude/consensus.json` from this setup command.
 2. Do not include GPT/Codex as an external panelist.
 3. For now, do not add Claude as an external panelist.
 4. Use Kilo/OpenRouter for OpenRouter-hosted models and native non-Codex CLIs only.
-5. Preserve user model preferences unless the user explicitly asks to replace them, but migrate legacy `command: "gemini"` entries to `command: "agy"` whenever rewriting the config.
+5. Preserve user model preferences unless the user explicitly asks to replace them.
 6. Do not smoke-test live model calls unless the user asks, because that consumes credits.
 
 ## Step 1: Inspect Current State
@@ -26,7 +26,6 @@ Check:
 ```bash
 test -f ~/.codex/consensus.json && jq . ~/.codex/consensus.json
 command -v kilo
-command -v agy
 command -v qwen
 test -f ~/.codex/.env && grep -q '^OPENROUTER_API_KEY=.\+' ~/.codex/.env
 test -f ~/.claude/.env && grep -q '^OPENROUTER_API_KEY=.\+' ~/.claude/.env
@@ -37,7 +36,7 @@ Report:
 - whether `~/.codex/consensus.json` exists and parses
 - enabled external models
 - configured quorum
-- Kilo, Antigravity (`agy`), and Qwen availability
+- Kilo and Qwen availability
 - whether an OpenRouter key exists in `~/.codex/.env` or fallback `~/.claude/.env`
 
 If the existing config is valid and the user only asked to inspect, stop after the summary.
@@ -48,24 +47,22 @@ Use these model mappings:
 
 | ID | Name | Default command | Native alternative |
 |----|------|-----------------|--------------------|
-| `gemini` | Gemini via Antigravity | `kilo run -m openrouter/google/gemini-3.1-pro-preview --auto` | `agy` |
 | `kimi` | Kimi K2.6 | `kilo run -m openrouter/moonshotai/kimi-k2.6 --auto` | none |
-| `grok` | Grok 4.20 | `kilo run -m openrouter/x-ai/grok-4.20-beta --auto` | none |
+| `grok` | Grok 4.3 | `kilo run -m openrouter/x-ai/grok-4.3 --auto` | none |
 | `minimax` | MiniMax M2.7 | `kilo run -m openrouter/minimax/minimax-m2.7 --auto` | none |
-| `glm5` | GLM-5.1 | `kilo run -m zai-coding-plan/glm-5.1 --auto` | none |
+| `glm5` | GLM-5.2 | `kilo run -m zai-coding-plan/glm-5.2 --auto` | none |
 | `qwen` | Qwen 3.6 Plus | `kilo run -m openrouter/qwen/qwen3.6-plus --auto` | optional `qwen`, disabled by default unless user asks |
-| `mimo` | MiMo V2 Pro | `kilo run -m openrouter/xiaomi/mimo-v2-pro --auto` | none |
+| `mimo` | MiMo V2.5 Pro | `kilo run -m openrouter/xiaomi/mimo-v2.5-pro --auto` | none |
 | `deepseek` | DeepSeek V4 Pro | `kilo run -m openrouter/deepseek/deepseek-v4-pro --auto` | none |
 
 Codex setup intentionally omits the Claude plugin's `gpt` model because Codex/GPT is the lead in Codex sessions.
 
 Recommended defaults:
 
-- enable the current stable non-Codex panel: Gemini via Antigravity, Kimi, MiniMax, GLM-5.1, Qwen, MiMo, and DeepSeek
+- enable the current stable non-Codex panel: Kimi, MiniMax, GLM-5.2, Qwen, MiMo V2.5 Pro, and DeepSeek
 - leave Grok disabled by default unless the user explicitly enables it
-- use Antigravity CLI when `agy` is installed; review workflows call it with `--sandbox -p` for both initial and convergence prompts
 - use Kilo/OpenRouter for the rest
-- set quorum to 8 for the default panel, meaning all 7 enabled externals plus Codex must respond
+- set quorum to 7 for the default panel, meaning all 6 enabled externals plus Codex must respond
 
 For custom panels, keep quorum within these bounds:
 
@@ -103,10 +100,10 @@ Write `~/.codex/consensus.json` with this shape:
   },
   "models": [
     {
-      "id": "gemini",
-      "name": "Gemini via Antigravity",
-      "command": "agy",
-      "resume_flag": "",
+      "id": "kimi",
+      "name": "Kimi K2.6",
+      "command": "kilo run -m openrouter/moonshotai/kimi-k2.6 --auto",
+      "resume_flag": "-c",
       "enabled": true
     }
   ],
@@ -115,13 +112,11 @@ Write `~/.codex/consensus.json` with this shape:
 }
 ```
 
-Include all 8 non-Codex external models, with `enabled` reflecting the user's selected panel.
+Include all 7 non-Codex external models, with `enabled` reflecting the user's selected panel.
 
-Use the selected quorum. The default Codex panel uses `min_quorum: 8`.
+Use the selected quorum. The default Codex panel uses `min_quorum: 7`.
 
 For enabled Kilo models, use `resume_flag: "-c"`.
-
-For native Google/Gemini execution, use `command: "agy"` and `resume_flag: ""`. If an existing user config has `command: "gemini"`, report it as legacy and migrate it to `agy` when the user refreshes the config.
 
 For native Qwen, only use `command: "qwen"` if the user explicitly selects native Qwen; otherwise prefer Kilo/OpenRouter.
 
@@ -139,7 +134,6 @@ fi
 
 For each enabled model, run a tiny prompt asking it to reply `PONG`, using the command pattern for that CLI:
 
-- `agy` or legacy `gemini`: `agy --sandbox -p "Reply with exactly: PONG"`
 - `qwen`: `qwen --approval-mode plan -p "Reply with exactly: PONG" -o text`
 - Kilo/OpenRouter: `{model.command} "Reply with exactly: PONG"`
 

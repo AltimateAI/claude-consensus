@@ -14,7 +14,7 @@ Claude commands load model configuration from:
 1. `~/.claude/consensus.json` - user config created by `/consensus-setup`
 2. `plugins/consensus/consensus.config.json` - Claude plugin defaults
 
-Claude is always the lead participant. Native CLIs (`codex`, Antigravity CLI via `agy`, `qwen`) are handled as special cases in the command templates. The `gemini` model id remains stable, but native Google/Gemini execution should use `agy`; bare `gemini` is legacy only.
+Claude is always the lead participant. Native CLIs (`codex`, `qwen`) are handled as special cases in the command templates.
 
 ## Codex Configuration
 

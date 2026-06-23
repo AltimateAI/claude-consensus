@@ -11,13 +11,6 @@
   },
   "models": [
     {
-      "id": "gemini",
-      "name": "Gemini via Antigravity",
-      "command": "agy",
-      "resume_flag": "",
-      "enabled": true
-    },
-    {
       "id": "kimi",
       "name": "Kimi K2.6",
       "command": "kilo run -m openrouter/moonshotai/kimi-k2.6 --auto",
@@ -26,8 +19,8 @@
     },
     {
       "id": "grok",
-      "name": "Grok 4.20",
-      "command": "kilo run -m openrouter/x-ai/grok-4.20-beta --auto",
+      "name": "Grok 4.3",
+      "command": "kilo run -m openrouter/x-ai/grok-4.3 --auto",
       "resume_flag": "-c",
       "enabled": false
     },
@@ -40,8 +33,8 @@
     },
     {
       "id": "glm5",
-      "name": "GLM-5.1",
-      "command": "kilo run -m zai-coding-plan/glm-5.1 --auto",
+      "name": "GLM-5.2",
+      "command": "kilo run -m zai-coding-plan/glm-5.2 --auto",
       "resume_flag": "-c",
       "enabled": true
     },
@@ -54,8 +47,8 @@
     },
     {
       "id": "mimo",
-      "name": "MiMo V2 Pro",
-      "command": "kilo run -m openrouter/xiaomi/mimo-v2-pro --auto",
+      "name": "MiMo V2.5 Pro",
+      "command": "kilo run -m openrouter/xiaomi/mimo-v2.5-pro --auto",
       "resume_flag": "-c",
       "enabled": true
     },
@@ -67,6 +60,6 @@
       "enabled": true
     }
   ],
-  "min_quorum": 8,
+  "min_quorum": 7,
   "performance_tracking": false
 }

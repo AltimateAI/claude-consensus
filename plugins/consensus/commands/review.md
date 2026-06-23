@@ -99,13 +99,11 @@ Source the API key (targeted — only export `OPENROUTER_API_KEY`):
 For each model in `MODELS`, verify CLI availability:
 - Commands starting with `kilo` -> check: `command -v kilo` AND `[ -n "$OPENROUTER_API_KEY" ]`
 - Commands starting with `codex` -> check: `command -v codex`
-- Commands starting with `agy` -> check: `command -v agy`
-- Commands starting with `gemini` -> legacy config; check `command -v agy`, run through the `agy` path below, and warn the user to rerun `/consensus-setup`
 - Commands starting with `qwen` -> check: `command -v qwen`
 
 Run all checks in parallel. Remove unavailable models from `MODELS` with a warning for each:
 ```
-Warning: Skipping {model.name} — {reason: "kilo CLI not found" / "OPENROUTER_API_KEY not set" / "codex CLI not found" / "Antigravity CLI not found"}
+Warning: Skipping {model.name} — {reason: "kilo CLI not found" / "OPENROUTER_API_KEY not set" / "codex CLI not found"}
 ```
 
 Count available models + 1 (Claude) = `TOTAL_PARTICIPANTS`.
@@ -261,9 +259,6 @@ SESSION_DIR={SESSION_DIR}
    **If `{MODEL_COMMAND}` starts with `codex`:**
    codex exec -s read-only -o $SESSION_DIR/{MODEL_ID}.md - < $SESSION_DIR/prompt.md
 
-   **If `{MODEL_COMMAND}` starts with `agy` or legacy `gemini`:**
-   agy --sandbox -p "$(cat $SESSION_DIR/prompt.md)" > $SESSION_DIR/{MODEL_ID}.md 2>&1
-
    **If `{MODEL_COMMAND}` starts with `qwen`:**
    qwen --approval-mode plan -p "$(cat $SESSION_DIR/prompt.md)" -o text > $SESSION_DIR/{MODEL_ID}.md 2>&1
 
@@ -286,9 +281,6 @@ After sending the review, WAIT. The lead will send you a convergence prompt. Whe
 
    **If `{MODEL_COMMAND}` starts with `codex`:**
    codex exec resume --last - < $SESSION_DIR/convergence-prompt-{MODEL_ID}.md > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
-
-   **If `{MODEL_COMMAND}` starts with `agy` or legacy `gemini`:**
-   agy --sandbox -p "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
 
    **If `{MODEL_COMMAND}` starts with `qwen`:**
    qwen -c -p "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" -o text > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
@@ -569,7 +561,7 @@ On failure: preserve `$SESSION_DIR` for debugging and tell the user where files 
 8. **Dynamic quorum.** Use `MIN_QUORUM` from config. Abort if fewer than `MIN_QUORUM` reviews available (including Claude).
 9. **Convergence through messaging.** Lead sends draft to teammates, they run their model and report back. Max 2 rounds.
 10. **No plan mode.** Reviews are presented directly, not written to plan files.
-11. **Be patient with teammates — they almost never fail.** External CLI models (Codex, Antigravity, Kilo) take time to explore the codebase but almost always finish successfully. Follow this activity-based patience protocol:
+11. **Be patient with teammates — they almost never fail.** External CLI models (Codex, Kilo) take time to explore the codebase but almost always finish successfully. Follow this activity-based patience protocol:
     - **Poll output files** every ~1 minute using `wc -c < $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0` to check file size.
     - **Growing file (or no file yet)** = the model is working. Keep waiting.
     - **A teammate is ONLY considered stuck if**: their output file exists AND its size has not changed for **10 consecutive checks** (10 minutes of zero growth).
