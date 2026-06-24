@@ -27,8 +27,6 @@ fi
 Preflight:
 
 - commands starting with `kilo` require `command -v kilo` and a non-empty `OPENROUTER_API_KEY`
-- commands starting with `agy` require `command -v agy`
-- commands starting with `gemini` are legacy configs; require `command -v agy`, run through the `agy` path below, and recommend rerunning `consensus-setup`
 - commands starting with `qwen` require `command -v qwen`
 - commands starting with `codex` must be skipped
 - never use `--yolo`
@@ -54,7 +52,6 @@ Support `--dirs /path/a,/path/b`:
 
 Directory flags:
 
-- Antigravity (`agy`) or legacy `gemini`: `--add-dir /path/a --add-dir /path/b`
 - native Qwen: `--include-directories /path/a,/path/b`
 - Kilo/OpenRouter: no CLI flag; include paths in the prompt
 
@@ -113,12 +110,6 @@ Kilo/OpenRouter:
 
 ```bash
 {MODEL_COMMAND} "$(cat "$SESSION_DIR/prompt.md")" > "$SESSION_DIR/{MODEL_ID}.md" 2>&1
-```
-
-Antigravity (`agy`) or legacy `gemini`:
-
-```bash
-agy --sandbox {EXTRA_DIRS_FLAGS} -p "$(cat "$SESSION_DIR/prompt.md")" > "$SESSION_DIR/{MODEL_ID}.md" 2>&1
 ```
 
 Native Qwen:
@@ -199,12 +190,6 @@ Kilo/OpenRouter:
 
 ```bash
 {MODEL_COMMAND} {MODEL_RESUME_FLAG} "$(cat "$SESSION_DIR/convergence-prompt.md")" > "$SESSION_DIR/{MODEL_ID}-convergence.md" 2>&1
-```
-
-Antigravity (`agy`) or legacy `gemini`:
-
-```bash
-agy --sandbox -p "$(cat "$SESSION_DIR/convergence-prompt.md")" > "$SESSION_DIR/{MODEL_ID}-convergence.md" 2>&1
 ```
 
 Native Qwen:
