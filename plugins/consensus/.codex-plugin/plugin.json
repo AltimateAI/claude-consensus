@@ -1,6 +1,6 @@
 {
   "name": "consensus",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Codex-led multi-model code review, plan review, and general review with consensus convergence",
   "author": {
     "name": "AltimateAI",

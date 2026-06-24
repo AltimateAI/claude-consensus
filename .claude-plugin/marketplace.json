@@ -6,7 +6,7 @@
   },
   "metadata": {
     "description": "Configurable multi-model consensus code review, plan review, and general review for Claude Code and Codex",
-    "version": "1.6.0"
+    "version": "1.7.0"
   },
   "plugins": [
     {
