@@ -92,7 +92,6 @@ For each model in `MODELS`, verify CLI availability:
 - Commands starting with `kilo` -> check: `command -v kilo` AND `[ -n "$OPENROUTER_API_KEY" ]`
 - Commands starting with `codex` -> check: `command -v codex`
 - Commands starting with `agy` -> check: `command -v agy`
-- Commands starting with `gemini` -> legacy config; check `command -v agy`, run through the `agy` path below, and warn the user to rerun `/consensus-setup`
 - Commands starting with `qwen` -> check: `command -v qwen`
 
 Run all checks in parallel. Remove unavailable models from `MODELS` with a warning for each:
@@ -216,7 +215,7 @@ For each model, substitute `{MODEL_ID}`, `{MODEL_NAME}`, `{MODEL_COMMAND}`, `{MO
 
 **Building `{EXTRA_DIRS_FLAGS}`** — if `EXTRA_DIRS` is non-empty, build per-CLI flags:
 - For commands starting with `codex`: `--add-dir /path1 --add-dir /path2` (one `--add-dir` per directory)
-- For commands starting with `agy` or legacy `gemini`: `--add-dir /path1 --add-dir /path2` (one `--add-dir` per directory)
+- For commands starting with `agy`: `--add-dir /path1 --add-dir /path2` (one `--add-dir` per directory)
 - For commands starting with `qwen`: `--include-directories /path1,/path2` (comma-separated)
 - For commands starting with `kilo`: empty string (kilo has no flag — the paths are already in the prompt)
 
@@ -237,7 +236,7 @@ SESSION_DIR={SESSION_DIR}
    **If `{MODEL_COMMAND}` starts with `codex`:**
    codex exec -s read-only {EXTRA_DIRS_FLAGS} -o $SESSION_DIR/{MODEL_ID}.md - < $SESSION_DIR/prompt.md
 
-   **If `{MODEL_COMMAND}` starts with `agy` or legacy `gemini`:**
+   **If `{MODEL_COMMAND}` starts with `agy`:**
    agy --sandbox {EXTRA_DIRS_FLAGS} -p "$(cat $SESSION_DIR/prompt.md)" > $SESSION_DIR/{MODEL_ID}.md 2>&1
 
    **If `{MODEL_COMMAND}` starts with `qwen`:**
@@ -263,7 +262,7 @@ After sending the review, WAIT. The lead will send you a convergence prompt. Whe
    **If `{MODEL_COMMAND}` starts with `codex`:**
    codex exec resume --last - < $SESSION_DIR/convergence-prompt-{MODEL_ID}.md > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
 
-   **If `{MODEL_COMMAND}` starts with `agy` or legacy `gemini`:**
+   **If `{MODEL_COMMAND}` starts with `agy`:**
    agy --sandbox -p "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
 
    **If `{MODEL_COMMAND}` starts with `qwen`:**
