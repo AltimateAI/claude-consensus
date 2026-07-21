@@ -61,8 +61,8 @@ Alias skills are also provided for `code-review`, `plan-review`, `plan-reviwe`, 
 | Requirement | Required? | Notes |
 |-------------|-----------|-------|
 | Claude Code or Codex | Yes | The host environment determines the lead reviewer |
-| Kilo CLI | Recommended | Routes OpenRouter models with one API key |
-| OpenRouter API key | Recommended | Required for Kilo/OpenRouter models |
+| pi CLI | Recommended | Routes OpenRouter models with one API key |
+| OpenRouter API key | Recommended | Required for pi/OpenRouter models |
 | Native CLIs | Optional | Claude supports `codex`, Antigravity CLI (`agy`), and `qwen`; Codex supports non-Codex native CLIs |
 | CodeRabbit CLI | Optional | Supplementary static analysis for code reviews |
 
@@ -73,15 +73,15 @@ Alias skills are also provided for `code-review`, `plan-review`, `plan-reviwe`, 
 | Model | Provider | OpenRouter ID | Claude native | Codex external |
 |-------|----------|---------------|---------------|----------------|
 | Claude | Anthropic | built-in | lead | not used |
-| Codex / GPT | OpenAI | `openai/gpt-5.4-codex` | `codex` | lead, not external |
+| Codex / GPT | OpenAI | `openai/gpt-5.3-codex` | `codex` | lead, not external |
 | Gemini 3.1 Pro | Google | `google/gemini-3.1-pro-preview` | Antigravity CLI (`agy`) | Antigravity CLI (`agy`) |
-| Kimi K2.6 | Moonshot | `moonshotai/kimi-k2.6` | Kilo | Kilo |
-| Grok 4.3 | xAI | `x-ai/grok-4.3` | Kilo | Kilo, disabled by default |
-| MiniMax M2.7 | MiniMax | `minimax/minimax-m2.7` | Kilo | Kilo |
-| GLM-5.2 | Zhipu AI | `zai-coding-plan/glm-5.2` | Kilo | Kilo |
-| Qwen 3.6 Plus | Alibaba | `qwen/qwen3.6-plus` | `qwen` or Kilo | Kilo by default |
-| MiMo V2.5 Pro | Xiaomi | `xiaomi/mimo-v2.5-pro` | Kilo | Kilo |
-| DeepSeek V4 Pro | DeepSeek | `deepseek/deepseek-v4-pro` | Kilo | Kilo |
+| Kimi K2.6 | Moonshot | `moonshotai/kimi-k2.6` | pi | pi |
+| Grok 4.3 | xAI | `x-ai/grok-4.3` | pi | pi, disabled by default |
+| MiniMax M2.7 | MiniMax | `minimax/minimax-m2.7` | pi | pi |
+| GLM-5.2 | Zhipu AI | `z-ai/glm-5.2` | pi | pi |
+| Qwen 3.6 Plus | Alibaba | `qwen/qwen3.6-plus` | `qwen` or pi | pi by default |
+| MiMo V2.5 Pro | Xiaomi | `xiaomi/mimo-v2.5-pro` | pi | pi |
+| DeepSeek V4 Pro | DeepSeek | `deepseek/deepseek-v4-pro` | pi | pi |
 
 Codex intentionally excludes Codex/GPT from the external panel because Codex is already the lead reviewer.
 
@@ -115,7 +115,7 @@ Example Codex config:
     {
       "id": "kimi",
       "name": "Kimi K2.6",
-      "command": "kilo run -m openrouter/moonshotai/kimi-k2.6 --auto",
+      "command": "pi --provider openrouter --model moonshotai/kimi-k2.6 -p",
       "resume_flag": "-c",
       "enabled": true
     }

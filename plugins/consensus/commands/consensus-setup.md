@@ -31,7 +31,7 @@ If user chooses "Keep current", print the current config summary and stop.
 Run all of these checks in parallel via Bash:
 
 ```bash
-command -v kilo && echo "KILO_OK" || echo "KILO_MISSING"
+command -v pi && echo "PI_OK" || echo "PI_MISSING"
 ```
 
 ```bash
@@ -57,7 +57,7 @@ Report findings to the user:
 ```
 ## CLI Detection Results
 
-- Kilo CLI: {installed / not found}
+- pi CLI: {installed / not found}
 - Codex CLI: {installed / not found}
 - Antigravity CLI (`agy`): {installed / not found}
 - Qwen CLI: {installed / not found}
@@ -72,11 +72,11 @@ AskUserQuestion:
   header: "Provider"
   options:
     - label: "OpenRouter (Recommended)"
-      description: "1 API key, all 9 models via Kilo CLI. Simplest setup."
+      description: "1 API key, all 9 models via pi. Simplest setup."
     - label: "Native CLIs"
       description: "Use codex, Antigravity (`agy`), and qwen CLIs directly where available. Requires each CLI installed separately."
     - label: "Both"
-      description: "Mix and match — use native CLIs where available, OpenRouter/Kilo for the rest."
+      description: "Mix and match — use native CLIs where available, OpenRouter/pi for the rest."
 ```
 
 ## Step 4: API Key Setup
@@ -119,24 +119,24 @@ Build the model list based on provider choice and detected CLIs.
 
 The 9 supported models and their CLI mappings:
 
-| Model ID | Name | OpenRouter (Kilo) | Native CLI |
+| Model ID | Name | OpenRouter (pi) | Native CLI |
 |----------|------|-------------------|------------|
-| `gpt` | GPT 5.4 Codex | `kilo run -m openrouter/openai/gpt-5.4-codex --auto` | `codex` (if codex CLI installed — note: native codex uses whatever model your `~/.codex/config.toml` specifies, e.g. `gpt-5.5`) |
-| `gemini` | Gemini via Antigravity | `kilo run -m openrouter/google/gemini-3.1-pro-preview --auto` | `agy` (if Antigravity CLI installed) |
-| `kimi` | Kimi K2.6 | `kilo run -m openrouter/moonshotai/kimi-k2.6 --auto` | OpenRouter only |
-| `grok` | Grok 4.3 | `kilo run -m openrouter/x-ai/grok-4.3 --auto` | OpenRouter only |
-| `minimax` | MiniMax M2.7 | `kilo run -m openrouter/minimax/minimax-m2.7 --auto` | OpenRouter only |
-| `glm5` | GLM-5.2 | `kilo run -m zai-coding-plan/glm-5.2 --auto` | Z.ai direct only |
-| `qwen` | Qwen 3.6 Plus | `kilo run -m openrouter/qwen/qwen3.6-plus --auto` | `qwen` (if qwen CLI installed) |
-| `mimo` | MiMo V2.5 Pro | `kilo run -m openrouter/xiaomi/mimo-v2.5-pro --auto` | OpenRouter only |
-| `deepseek` | DeepSeek V4 Pro | `kilo run -m openrouter/deepseek/deepseek-v4-pro --auto` | OpenRouter only |
+| `gpt` | GPT 5.3 Codex | `pi --provider openrouter --model openai/gpt-5.3-codex -p` | `codex` (if codex CLI installed — note: native codex uses whatever model your `~/.codex/config.toml` specifies, e.g. `gpt-5.5`) |
+| `gemini` | Gemini via Antigravity | `pi --provider openrouter --model google/gemini-3.1-pro-preview -p` | `agy` (if Antigravity CLI installed) |
+| `kimi` | Kimi K2.6 | `pi --provider openrouter --model moonshotai/kimi-k2.6 -p` | OpenRouter only |
+| `grok` | Grok 4.3 | `pi --provider openrouter --model x-ai/grok-4.3 -p` | OpenRouter only |
+| `minimax` | MiniMax M2.7 | `pi --provider openrouter --model minimax/minimax-m2.7 -p` | OpenRouter only |
+| `glm5` | GLM-5.2 | `pi --provider openrouter --model z-ai/glm-5.2 -p` | OpenRouter only |
+| `qwen` | Qwen 3.6 Plus | `pi --provider openrouter --model qwen/qwen3.6-plus -p` | `qwen` (if qwen CLI installed) |
+| `mimo` | MiMo V2.5 Pro | `pi --provider openrouter --model xiaomi/mimo-v2.5-pro -p` | OpenRouter only |
+| `deepseek` | DeepSeek V4 Pro | `pi --provider openrouter --model deepseek/deepseek-v4-pro -p` | OpenRouter only |
 
 **Note on native CLIs**: For `codex`, `agy`, and `qwen`, set the config's `command` field to just `codex`, `agy`, or `qwen`. The teammate template in the review/plan commands detects these and uses the correct native invocation patterns automatically (e.g., `codex exec -s read-only` for reviews, `codex exec resume --last` for convergence, `agy --sandbox -p` for reviews and convergence prompts, `qwen --approval-mode plan -p` with `-o text` for reviews, `qwen -c -p` for convergence). The `resume_flag` field is ignored for native CLIs.
 
 Determine which models are available:
-- **OpenRouter path**: All 9 available if `kilo` installed + API key set
+- **OpenRouter path**: All 9 available if `pi` installed + API key set
 - **Native path**: Only `gpt` (if codex installed), `gemini` (if `agy` installed), and `qwen` (if qwen installed)
-- **Both path**: Native CLI where available, OpenRouter/Kilo for the rest
+- **Both path**: Native CLI where available, OpenRouter/pi for the rest
 
 ```
 AskUserQuestion:
@@ -144,7 +144,7 @@ AskUserQuestion:
   header: "Models"
   multiSelect: true
   options:
-    - label: "GPT 5.4 Codex"
+    - label: "GPT 5.3 Codex"
       description: "{available via OpenRouter / available via codex CLI / not available}"
     - label: "Gemini 3.1 Pro"
       description: "{available via OpenRouter / available via Antigravity CLI / not available}"
@@ -155,7 +155,7 @@ AskUserQuestion:
     - label: "MiniMax M2.7"
       description: "{available via OpenRouter / not available}"
     - label: "GLM-5.2"
-      description: "{available via Z.ai coding plan / not available}"
+      description: "{available via OpenRouter / not available}"
     - label: "Qwen 3.6 Plus"
       description: "{available via OpenRouter / available via qwen CLI / not available}"
     - label: "MiMo V2.5 Pro"
@@ -202,7 +202,7 @@ For each of the 9 models:
 
 For enabled models:
 - If user chose "Native CLIs" or "Both" AND the native CLI is detected, use the native command + native resume flag
-- Otherwise use the OpenRouter/Kilo command + `-c` resume flag
+- Otherwise use the OpenRouter/pi command + `-c` resume flag
 
 Write the config to `~/.claude/consensus.json` using the Write tool:
 
@@ -244,7 +244,7 @@ Use the command pattern for the configured CLI:
 - `codex`: `printf '%s\n' "Reply with exactly: PONG" | codex exec -s read-only - 2>&1 | head -20`
 - `agy`: `agy --sandbox -p "Reply with exactly: PONG" 2>&1 | head -20`
 - `qwen`: `qwen --approval-mode plan -p "Reply with exactly: PONG" -o text 2>&1 | head -20`
-- Kilo/OpenRouter: `{model.command} "Reply with exactly: PONG" 2>&1 | head -20`
+- pi/OpenRouter: `{model.command} "Reply with exactly: PONG" 2>&1 | head -20`
 
 Check if the output contains "PONG" (case-insensitive).
 
@@ -256,7 +256,7 @@ Report results:
 ```
 ## Smoke Test Results
 
-- GPT 5.4 Codex: PASS
+- GPT 5.3 Codex: PASS
 - Gemini 3.1 Pro: PASS
 - Kimi K2.6: FAIL — {error or empty output}
 - ...
@@ -298,7 +298,7 @@ Print the final summary:
 
 1. **9 fixed models only.** Do not offer custom model configuration. The wizard supports exactly the 9 models listed above.
 2. **Idempotent .env updates.** When writing API keys, preserve all existing keys in the file. Only add/update the `OPENROUTER_API_KEY` line.
-3. **Native CLI support for codex, agy, and qwen.** When a user selects native CLIs, set the config's `command` field to `codex`, `agy`, or `qwen`. The teammate template in the review/plan commands handles the full invocation patterns automatically. All other models use OpenRouter/Kilo only.
+3. **Native CLI support for codex, agy, and qwen.** When a user selects native CLIs, set the config's `command` field to `codex`, `agy`, or `qwen`. The teammate template in the review/plan commands handles the full invocation patterns automatically. All other models use OpenRouter/pi only. Bare `gemini` is a legacy config value; migrate it to `agy` when rewriting the config.
 4. **OpenRouter is the recommended path.** 1 key = 9 models. Emphasize this as the simplest setup.
 5. **Enforce minimum 1 external model.** Claude alone is not a consensus.
 6. **Hard-stop on quorum failure.** Never finalize a config that can't meet its own quorum.

@@ -1,5 +1,5 @@
 {
-  "version": "1.7.0",
+  "version": "1.8.0",
   "lead": {
     "id": "codex",
     "name": "Codex",
@@ -20,49 +20,49 @@
     {
       "id": "kimi",
       "name": "Kimi K2.6",
-      "command": "kilo run -m openrouter/moonshotai/kimi-k2.6 --auto",
+      "command": "pi --provider openrouter --model moonshotai/kimi-k2.6 -p",
       "resume_flag": "-c",
       "enabled": true
     },
     {
       "id": "grok",
       "name": "Grok 4.3",
-      "command": "kilo run -m openrouter/x-ai/grok-4.3 --auto",
+      "command": "pi --provider openrouter --model x-ai/grok-4.3 -p",
       "resume_flag": "-c",
       "enabled": false
     },
     {
       "id": "minimax",
       "name": "MiniMax M2.7",
-      "command": "kilo run -m openrouter/minimax/minimax-m2.7 --auto",
+      "command": "pi --provider openrouter --model minimax/minimax-m2.7 -p",
       "resume_flag": "-c",
       "enabled": true
     },
     {
       "id": "glm5",
       "name": "GLM-5.2",
-      "command": "kilo run -m zai-coding-plan/glm-5.2 --auto",
+      "command": "pi --provider openrouter --model z-ai/glm-5.2 -p",
       "resume_flag": "-c",
       "enabled": true
     },
     {
       "id": "qwen",
       "name": "Qwen 3.6 Plus",
-      "command": "kilo run -m openrouter/qwen/qwen3.6-plus --auto",
+      "command": "pi --provider openrouter --model qwen/qwen3.6-plus -p",
       "resume_flag": "-c",
       "enabled": true
     },
     {
       "id": "mimo",
       "name": "MiMo V2.5 Pro",
-      "command": "kilo run -m openrouter/xiaomi/mimo-v2.5-pro --auto",
+      "command": "pi --provider openrouter --model xiaomi/mimo-v2.5-pro -p",
       "resume_flag": "-c",
       "enabled": true
     },
     {
       "id": "deepseek",
       "name": "DeepSeek V4 Pro",
-      "command": "kilo run -m openrouter/deepseek/deepseek-v4-pro --auto",
+      "command": "pi --provider openrouter --model deepseek/deepseek-v4-pro -p",
       "resume_flag": "-c",
       "enabled": true
     }

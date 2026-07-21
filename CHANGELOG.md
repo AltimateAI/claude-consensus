@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.8.0] - 2026-07-21
+
+### Changed
+
+- **External model harness switched from Kilo to the [pi coding agent](https://pi.dev).** All OpenRouter-hosted model entries now run `pi --provider openrouter --model <id> -p` instead of `kilo run -m openrouter/<id> --auto`. Resume/convergence keeps `resume_flag: "-c"` (pi's `--continue`). Native `codex`/`agy`/`qwen` entries are unchanged.
+- Setup CLI-detection, provider prompts, harness tables, and preflight checks now reference `pi` (`command -v pi`) instead of `kilo`.
+- Fixed stale/invalid model ids that no longer resolve on OpenRouter: `openai/gpt-5.4-codex` → `openai/gpt-5.3-codex`, `x-ai/grok-4.20-beta` → `x-ai/grok-4.3`, `xiaomi/mimo-v2-pro` → `xiaomi/mimo-v2.5-pro` (display names aligned). Verified every default model id against pi's live OpenRouter catalog.
+- **GLM now routes through OpenRouter** (`z-ai/glm-5.2`) instead of the Z.ai coding-plan direct provider (`zai-coding-plan/glm-5.2`) — pi has no Z.ai-direct provider. This changes GLM billing from a Z.ai coding-plan subscription to OpenRouter usage; Z.ai coding-plan users who want the direct route should register a pi custom provider (see below).
+- Convergence isolates each panelist's pi session with `--session-dir "$SESSION_DIR/pi-<model_id>"` so the `-c`/`--continue` resume can't cross-wire parallel panelists (pi resumes the most-recent session *per working directory*).
+- Plugin metadata bumped to v1.8.0.
+
+### Note
+
+- Private/self-hosted endpoints (e.g. Azure OpenAI) are supported by registering a pi custom provider via an extension in `~/.pi/agent/extensions/` — see the pi custom-provider docs.
+
 ## [1.7.0] - 2026-05-20
 
 ### Changed
