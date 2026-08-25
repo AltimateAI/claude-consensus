@@ -89,14 +89,18 @@ Source the API key (targeted — only export `OPENROUTER_API_KEY`):
 ```
 
 For each model in `MODELS`, verify CLI availability:
-- Commands starting with `kilo` -> check: `command -v kilo` AND `[ -n "$OPENROUTER_API_KEY" ]`
+- Commands starting with `pi ` (the pi CLI, not `pip`/`pixi`) -> check `command -v pi`, then derive
+  the required credential from that model's own `--provider`:
+    * `--provider openrouter` -> also require `[ -n "$OPENROUTER_API_KEY" ]`
+    * any other provider (e.g. `altimate-azure`) -> configured as a pi provider/extension, so it
+      needs NO OpenRouter key. Do NOT skip it for a missing `OPENROUTER_API_KEY`.
 - Commands starting with `codex` -> check: `command -v codex`
 - Commands starting with `agy` -> check: `command -v agy`
 - Commands starting with `qwen` -> check: `command -v qwen`
 
 Run all checks in parallel. Remove unavailable models from `MODELS` with a warning for each:
 ```
-Warning: Skipping {model.name} — {reason: "kilo CLI not found" / "OPENROUTER_API_KEY not set" / "codex CLI not found" / "Antigravity CLI not found"}
+Warning: Skipping {model.name} — {reason: "pi CLI not found" / "OPENROUTER_API_KEY not set" / "codex CLI not found" / "Antigravity CLI not found"}
 ```
 
 Count available models + 1 (Claude) = `TOTAL_PARTICIPANTS`.
@@ -230,7 +234,7 @@ For each model, substitute `{MODEL_ID}`, `{MODEL_NAME}`, `{MODEL_COMMAND}`, `{MO
 - For commands starting with `codex`: `--add-dir /path1 --add-dir /path2` (one `--add-dir` per directory)
 - For commands starting with `agy`: `--add-dir /path1 --add-dir /path2` (one `--add-dir` per directory)
 - For commands starting with `qwen`: `--include-directories /path1,/path2` (comma-separated)
-- For commands starting with `kilo`: empty string (kilo has no flag — the paths are already in the prompt)
+- For commands starting with `pi `: empty string (pi takes no extra-dirs flag — the paths are already in the prompt)
 
 If `EXTRA_DIRS` is empty, `{EXTRA_DIRS_FLAGS}` is an empty string for all CLIs.
 
@@ -255,8 +259,15 @@ SESSION_DIR={SESSION_DIR}
    **If `{MODEL_COMMAND}` starts with `qwen`:**
    qwen {EXTRA_DIRS_FLAGS} --approval-mode plan -p "$(cat $SESSION_DIR/prompt.md)" -o text > $SESSION_DIR/{MODEL_ID}.md 2>&1
 
-   **Otherwise (Kilo/OpenRouter — default):**
-   {MODEL_COMMAND} "$(cat $SESSION_DIR/prompt.md)" > $SESSION_DIR/{MODEL_ID}.md 2>&1
+   **Otherwise (pi/OpenRouter — default):**
+   # pi buffers ALL output until it exits (verified for --mode text, json and
+   # rpc — nothing is written mid-run, and the session file is not created
+   # until completion either). So progress is NOT observable from the output
+   # file; liveness must come from the process. Launch it with a pid file and
+   # an exit sentinel so the lead can distinguish "still working" from "done".
+   ( {MODEL_COMMAND} --session-dir "$SESSION_DIR/pi-{MODEL_ID}" "$(cat $SESSION_DIR/prompt.md)" > $SESSION_DIR/{MODEL_ID}.md 2>&1; echo $? > $SESSION_DIR/{MODEL_ID}.exit ) &
+   echo $! > $SESSION_DIR/{MODEL_ID}.pid
+   wait $(cat $SESSION_DIR/{MODEL_ID}.pid)
 
    If it fails or produces empty output, retry ONCE.
 
@@ -281,8 +292,10 @@ After sending the plan, WAIT. The lead will send you a convergence prompt. When 
    **If `{MODEL_COMMAND}` starts with `qwen`:**
    qwen -c -p "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" -o text > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
 
-   **Otherwise (Kilo/OpenRouter — default):**
-   {MODEL_COMMAND} {MODEL_RESUME_FLAG} "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
+   **Otherwise (pi/OpenRouter — default):**
+   ( {MODEL_COMMAND} {MODEL_RESUME_FLAG} --session-dir "$SESSION_DIR/pi-{MODEL_ID}" "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1; echo $? > $SESSION_DIR/{MODEL_ID}-convergence.exit ) &
+   echo $! > $SESSION_DIR/{MODEL_ID}-convergence.pid
+   wait $(cat $SESSION_DIR/{MODEL_ID}-convergence.pid)
 
 3. Read the output, clean it
 4. Send it to the lead via SendMessage. The response should start with APPROVE or CHANGES NEEDED.
@@ -298,15 +311,25 @@ Wait for a shutdown_request from the lead before exiting.
 Complete Claude's plan. Then use the following polling protocol to wait for all teammates:
 
 **Polling-based wait loop:**
-1. Every ~1 minute, check each pending teammate's output file size:
-   `wc -c < $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0`
-2. Track the file size. If it's growing (or the file doesn't exist yet because the model is still exploring) — the model is working. Keep waiting.
-3. A teammate is ONLY considered stuck if:
-   - Their output file exists AND
-   - Its size has not changed for 10 consecutive checks (10 minutes)
-4. If a teammate appears stuck after 10 minutes of no file growth, send them a check-in message: "Are you still working? Send me your current output if you have any."
-5. Wait another 3 minutes after check-in before giving up on that teammate.
-6. DO NOT proceed to Step 5 until every teammate has either sent their result via SendMessage or been declared stuck per the above protocol.
+
+> ⚠ Do NOT use output-file growth as a health signal. `pi` buffers everything
+> until it exits, so `{model.id}.md` stays at **0 bytes for the entire run** —
+> a healthy 40-minute review looks identical to a hung one. Judging by file
+> size will make you abandon working reviews.
+
+1. Every ~1 minute, check whether each pending model's PROCESS is still alive:
+   `kill -0 $(cat $SESSION_DIR/{model.id}.pid 2>/dev/null) 2>/dev/null && echo ALIVE || echo GONE`
+2. `ALIVE` = the model is working, regardless of output size. Keep waiting.
+3. Completion is signalled by the exit sentinel, not by file size:
+   `cat $SESSION_DIR/{model.id}.exit 2>/dev/null` — `0` means success, any other
+   value means the CLI failed (retry ONCE, per the teammate template).
+4. A teammate is only treated as failed when its process is `GONE` **and** either
+   the `.exit` sentinel is non-zero or `{model.id}.md` is empty. A `GONE` process
+   with a `0` sentinel and non-empty output is a SUCCESS — wait for its SendMessage.
+5. If a process is `GONE` with no sentinel at all (killed/crashed), send a check-in
+   message, then give up on that teammate after 3 minutes.
+6. DO NOT proceed to Step 5 until every teammate has either sent their result via
+   SendMessage or been declared failed per the above protocol.
 
 Report to user (dynamically built from `MODELS`):
 
@@ -476,8 +499,11 @@ On failure: preserve `$SESSION_DIR` for debugging and tell the user where files 
 8. **Dynamic quorum.** Use `MIN_QUORUM` from config. Abort if fewer than `MIN_QUORUM` plans available (including Claude).
 9. **Return to plan mode.** After final plan + cleanup, call `EnterPlanMode` for user review (with fallback to direct presentation).
 10. **Convergence through messaging.** Lead sends draft to teammates, they run their model and report back. Max 2 rounds.
-11. **Be patient with teammates — they almost never fail.** External CLI models (Codex, Antigravity, Kilo) take time to explore the codebase but almost always finish successfully. Follow this activity-based patience protocol:
-    - **Poll output files** every ~1 minute using `wc -c < $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0` to check file size.
+11. **Be patient with teammates — they almost never fail.** External CLI models (Codex, Antigravity, pi) take time to explore the codebase but almost always finish successfully. Follow this activity-based patience protocol:
+    - **Poll the process, not the file** every ~1 minute:
+      `kill -0 $(cat $SESSION_DIR/{model.id}.pid) 2>/dev/null && echo ALIVE || echo GONE`.
+      `pi` buffers all output until exit, so the output file is 0 bytes for the
+      whole run and its size says nothing about health.
     - **Growing file (or no file yet)** = the model is working. Keep waiting.
     - **A teammate is ONLY considered stuck if**: their output file exists AND its size has not changed for **10 consecutive checks** (10 minutes of zero growth).
     - If stuck after 10 minutes, send a check-in message: "Are you still working? Send me your current output if you have any." Wait another 3 minutes before giving up on that teammate.

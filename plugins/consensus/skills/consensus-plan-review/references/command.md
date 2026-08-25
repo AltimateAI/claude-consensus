@@ -26,7 +26,7 @@ fi
 
 Preflight:
 
-- commands starting with `kilo` require `command -v kilo` and a non-empty `OPENROUTER_API_KEY`
+- commands starting with `pi ` require `command -v pi` and a non-empty `OPENROUTER_API_KEY`
 - commands starting with `agy` require `command -v agy`
 - commands starting with `qwen` require `command -v qwen`
 - commands starting with `codex` must be skipped
@@ -55,7 +55,7 @@ Directory flags:
 
 - Antigravity (`agy`): `--add-dir /path/a --add-dir /path/b`
 - native Qwen: `--include-directories /path/a,/path/b`
-- Kilo/OpenRouter: no CLI flag; include paths in the prompt
+- pi/OpenRouter: no CLI flag; include paths in the prompt
 
 ## Session
 
@@ -108,10 +108,13 @@ Do not mention model providers or model names in prompts sent to external tools.
 
 For every enabled external model, start the CLI in parallel and write output to `$SESSION_DIR/{model.id}.md`.
 
-Kilo/OpenRouter:
+pi/OpenRouter:
 
 ```bash
-{MODEL_COMMAND} "$(cat "$SESSION_DIR/prompt.md")" > "$SESSION_DIR/{MODEL_ID}.md" 2>&1
+# pi buffers all output until exit, so track liveness by process, not file size.
+( {MODEL_COMMAND} --session-dir "$SESSION_DIR/pi-{MODEL_ID}" "$(cat "$SESSION_DIR/prompt.md")" > "$SESSION_DIR/{MODEL_ID}.md" 2>&1; echo $? > "$SESSION_DIR/{MODEL_ID}.exit" ) &
+echo $! > "$SESSION_DIR/{MODEL_ID}.pid"
+wait $(cat "$SESSION_DIR/{MODEL_ID}.pid")
 ```
 
 Antigravity (`agy`):
@@ -194,10 +197,10 @@ Only raise issues that genuinely affect correctness, feasibility, or quality.
 
 Run the convergence prompt against every external model.
 
-Kilo/OpenRouter:
+pi/OpenRouter:
 
 ```bash
-{MODEL_COMMAND} {MODEL_RESUME_FLAG} "$(cat "$SESSION_DIR/convergence-prompt.md")" > "$SESSION_DIR/{MODEL_ID}-convergence.md" 2>&1
+{MODEL_COMMAND} {MODEL_RESUME_FLAG} --session-dir "$SESSION_DIR/pi-{MODEL_ID}" "$(cat "$SESSION_DIR/convergence-prompt.md")" > "$SESSION_DIR/{MODEL_ID}-convergence.md" 2>&1
 ```
 
 Antigravity (`agy`):

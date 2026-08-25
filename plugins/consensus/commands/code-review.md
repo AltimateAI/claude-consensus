@@ -89,30 +89,28 @@ Source the API key (targeted — only export `OPENROUTER_API_KEY`):
 ```
 
 For each model in `MODELS`, verify CLI availability:
-- Commands starting with `kilo` -> check: `command -v kilo` AND `[ -n "$OPENROUTER_API_KEY" ]`
+- Commands starting with `pi ` (the pi CLI, not `pip`/`pixi`) -> check `command -v pi`, then derive
+  the required credential from that model's own `--provider`:
+    * `--provider openrouter` -> also require `[ -n "$OPENROUTER_API_KEY" ]`
+    * any other provider (e.g. `altimate-azure`) -> configured as a pi provider/extension, so it
+      needs NO OpenRouter key. Do NOT skip it for a missing `OPENROUTER_API_KEY`.
 - Commands starting with `codex` -> check: `command -v codex`
 - Commands starting with `agy` -> check: `command -v agy`
 - Commands starting with `qwen` -> check: `command -v qwen`
 
 Run all checks in parallel. Remove unavailable models from `MODELS` with a warning for each:
 ```
-Warning: Skipping {model.name} — {reason: "kilo CLI not found" / "OPENROUTER_API_KEY not set" / "codex CLI not found" / "Antigravity CLI not found"}
+Warning: Skipping {model.name} — {reason: "pi CLI not found" / "OPENROUTER_API_KEY not set" / "codex CLI not found" / "Antigravity CLI not found"}
 ```
 
-**Check CodeRabbit availability:**
-```bash
-command -v coderabbit && echo "CODERABBIT_OK"
-```
-If available, set `CODERABBIT_AVAILABLE=true`. CodeRabbit is a supplementary static analysis reviewer — it does NOT count toward quorum and does NOT participate in convergence. Its findings are incorporated during synthesis.
+Count available models + 1 (Claude) = `TOTAL_PARTICIPANTS`.
 
-Count available models + 1 (Claude) = `TOTAL_PARTICIPANTS`. If CodeRabbit is available, add 1 to `TOTAL_PARTICIPANTS` for reporting (but NOT for quorum calculation).
-
-If `TOTAL_PARTICIPANTS (excluding CodeRabbit) < MIN_QUORUM`:
+If `TOTAL_PARTICIPANTS < MIN_QUORUM`:
 **ABORT**: "Only {TOTAL_PARTICIPANTS} models available but quorum requires {MIN_QUORUM}. Run `/consensus-setup` to reconfigure."
 
 Report:
 ```
-Panel: Claude + {comma-separated list of available model names}{+ CodeRabbit if available} ({TOTAL_PARTICIPANTS} total, quorum={MIN_QUORUM})
+Panel: Claude + {comma-separated list of available model names} ({TOTAL_PARTICIPANTS} total, quorum={MIN_QUORUM})
 ```
 
 ## Step 1: Create Session Directory & Write Prompt
@@ -193,19 +191,10 @@ Task:
   prompt: <see TEAMMATE TEMPLATE below, with variables substituted>
 ```
 
-**While teammates work**, do two things in parallel:
+**While teammates work**, write Claude's own review using codebase knowledge — Read the changed
+files, related tests, understand patterns. Write your review to `$SESSION_DIR/claude.md`.
 
-1. **Run CodeRabbit** (if `CODERABBIT_AVAILABLE`):
-   ```bash
-   coderabbit review --plain --base {BASE_BRANCH or BASE_COMMIT} > $SESSION_DIR/coderabbit.md 2>&1
-   ```
-   - Use the same base reference as the review target (e.g., `--base main` for branch diffs, `--base-commit HEAD~N` for commit ranges)
-   - CodeRabbit runs fast (typically 30-60 seconds) and writes structured findings directly
-   - If it fails or returns empty output, set `CODERABBIT_AVAILABLE=false` and continue without it
-
-2. **Write Claude's own review** using codebase knowledge — Read the changed files, related tests, understand patterns. Write your review to `$SESSION_DIR/claude.md`.
-
-**Do not wait for teammates before starting Claude's review or CodeRabbit.** Work in parallel.
+**Do not wait for teammates before starting Claude's review.** Work in parallel.
 
 **Expected duration:** External CLI models typically take 3-10 minutes to explore the codebase and produce output. Some models may take longer on complex codebases. This is completely normal — these models almost never fail. Do NOT check on teammates, send messages, or assume failure. Just wait for their SendMessage.
 
@@ -217,7 +206,7 @@ For each model, substitute `{MODEL_ID}`, `{MODEL_NAME}`, `{MODEL_COMMAND}`, `{MO
 - For commands starting with `codex`: `--add-dir /path1 --add-dir /path2` (one `--add-dir` per directory)
 - For commands starting with `agy`: `--add-dir /path1 --add-dir /path2` (one `--add-dir` per directory)
 - For commands starting with `qwen`: `--include-directories /path1,/path2` (comma-separated)
-- For commands starting with `kilo`: empty string (kilo has no flag — the paths are already in the prompt)
+- For commands starting with `pi `: empty string (pi takes no extra-dirs flag — the paths are already in the prompt)
 
 If `EXTRA_DIRS` is empty, `{EXTRA_DIRS_FLAGS}` is an empty string for all CLIs.
 
@@ -242,8 +231,15 @@ SESSION_DIR={SESSION_DIR}
    **If `{MODEL_COMMAND}` starts with `qwen`:**
    qwen {EXTRA_DIRS_FLAGS} --approval-mode plan -p "$(cat $SESSION_DIR/prompt.md)" -o text > $SESSION_DIR/{MODEL_ID}.md 2>&1
 
-   **Otherwise (Kilo/OpenRouter — default):**
-   {MODEL_COMMAND} "$(cat $SESSION_DIR/prompt.md)" > $SESSION_DIR/{MODEL_ID}.md 2>&1
+   **Otherwise (pi/OpenRouter — default):**
+   # pi buffers ALL output until it exits (verified for --mode text, json and
+   # rpc — nothing is written mid-run, and the session file is not created
+   # until completion either). So progress is NOT observable from the output
+   # file; liveness must come from the process. Launch it with a pid file and
+   # an exit sentinel so the lead can distinguish "still working" from "done".
+   ( {MODEL_COMMAND} --session-dir "$SESSION_DIR/pi-{MODEL_ID}" "$(cat $SESSION_DIR/prompt.md)" > $SESSION_DIR/{MODEL_ID}.md 2>&1; echo $? > $SESSION_DIR/{MODEL_ID}.exit ) &
+   echo $! > $SESSION_DIR/{MODEL_ID}.pid
+   wait $(cat $SESSION_DIR/{MODEL_ID}.pid)
 
    If it fails or produces empty output, retry ONCE.
 
@@ -268,8 +264,10 @@ After sending the review, WAIT. The lead will send you a convergence prompt. Whe
    **If `{MODEL_COMMAND}` starts with `qwen`:**
    qwen -c -p "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" -o text > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
 
-   **Otherwise (Kilo/OpenRouter — default):**
-   {MODEL_COMMAND} {MODEL_RESUME_FLAG} "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
+   **Otherwise (pi/OpenRouter — default):**
+   ( {MODEL_COMMAND} {MODEL_RESUME_FLAG} --session-dir "$SESSION_DIR/pi-{MODEL_ID}" "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1; echo $? > $SESSION_DIR/{MODEL_ID}-convergence.exit ) &
+   echo $! > $SESSION_DIR/{MODEL_ID}-convergence.pid
+   wait $(cat $SESSION_DIR/{MODEL_ID}-convergence.pid)
 
 3. Read the output, clean it
 4. Send it to the lead via SendMessage. The response should start with APPROVE or CHANGES NEEDED.
@@ -285,15 +283,25 @@ Wait for a shutdown_request from the lead before exiting.
 Complete Claude's review. Then use the following polling protocol to wait for all teammates:
 
 **Polling-based wait loop:**
-1. Every ~1 minute, check each pending teammate's output file size:
-   `wc -c < $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0`
-2. Track the file size. If it's growing (or the file doesn't exist yet because the model is still exploring) — the model is working. Keep waiting.
-3. A teammate is ONLY considered stuck if:
-   - Their output file exists AND
-   - Its size has not changed for 10 consecutive checks (10 minutes)
-4. If a teammate appears stuck after 10 minutes of no file growth, send them a check-in message: "Are you still working? Send me your current output if you have any."
-5. Wait another 3 minutes after check-in before giving up on that teammate.
-6. DO NOT proceed to Step 5 until every teammate has either sent their result via SendMessage or been declared stuck per the above protocol.
+
+> ⚠ Do NOT use output-file growth as a health signal. `pi` buffers everything
+> until it exits, so `{model.id}.md` stays at **0 bytes for the entire run** —
+> a healthy 40-minute review looks identical to a hung one. Judging by file
+> size will make you abandon working reviews.
+
+1. Every ~1 minute, check whether each pending model's PROCESS is still alive:
+   `kill -0 $(cat $SESSION_DIR/{model.id}.pid 2>/dev/null) 2>/dev/null && echo ALIVE || echo GONE`
+2. `ALIVE` = the model is working, regardless of output size. Keep waiting.
+3. Completion is signalled by the exit sentinel, not by file size:
+   `cat $SESSION_DIR/{model.id}.exit 2>/dev/null` — `0` means success, any other
+   value means the CLI failed (retry ONCE, per the teammate template).
+4. A teammate is only treated as failed when its process is `GONE` **and** either
+   the `.exit` sentinel is non-zero or `{model.id}.md` is empty. A `GONE` process
+   with a `0` sentinel and non-empty output is a SUCCESS — wait for its SendMessage.
+5. If a process is `GONE` with no sentinel at all (killed/crashed), send a check-in
+   message, then give up on that teammate after 3 minutes.
+6. DO NOT proceed to Step 5 until every teammate has either sent their result via
+   SendMessage or been declared failed per the above protocol.
 
 Report to user (dynamically built from `MODELS`):
 
@@ -301,7 +309,6 @@ Report to user (dynamically built from `MODELS`):
 ## Review Collection: {N}/{TOTAL_PARTICIPANTS} Reviews Received
 
 - Claude: done/failed
-- CodeRabbit: done/skipped/failed (only if CODERABBIT_AVAILABLE)
 - {model.name}: done/failed (reason)
 - ... (one line per model in MODELS)
 ```
@@ -310,9 +317,7 @@ Report to user (dynamically built from `MODELS`):
 
 ## Step 5: Analyze & Compare
 
-Read all available reviews — including CodeRabbit's output at `$SESSION_DIR/coderabbit.md` if it ran — and present a structured comparison.
-
-**CodeRabbit findings**: CodeRabbit produces structured findings with file paths, line numbers, types (potential_issue, refactor_suggestion), and suggested fixes. Parse these and include them alongside the AI model reviews. CodeRabbit findings are treated as an additional signal — they carry weight like any other reviewer but CodeRabbit does NOT participate in convergence rounds.
+Read all available reviews and present a structured comparison.
 
 ```
 ## Review Results ({N}/{TOTAL_PARTICIPANTS} Reviews Received)
@@ -338,7 +343,7 @@ Read all available reviews — including CodeRabbit's output at `$SESSION_DIR/co
 | Overall verdict | {pass/fail} | ... | ... | ... |
 ```
 
-Build the comparison table columns dynamically from `["Claude"] + (["CodeRabbit"] if CODERABBIT_AVAILABLE) + [m.name for m in MODELS]`.
+Build the comparison table columns dynamically from `["Claude"] + [m.name for m in MODELS]`.
 
 ## Step 6: Draft Synthesized Review
 
@@ -459,7 +464,7 @@ Include a **finding attribution table** (dynamically built from participating mo
 | {specific issue from the review} | {model name(s)} | Consensus / Unique / Convergence fix |
 | {another issue} | {model name(s)} | ... |
 
-*Reviewed by {TOTAL_PARTICIPANTS} participants: Claude, {comma-separated model names from MODELS}{, CodeRabbit (static analysis) if it ran}. Convergence: {N} round(s). {any user overrides noted}*
+*Reviewed by {TOTAL_PARTICIPANTS} participants: Claude, {comma-separated model names from MODELS}. Convergence: {N} round(s). {any user overrides noted}*
 ```
 
 **Rules for the attribution table:**
@@ -493,8 +498,11 @@ On failure: preserve `$SESSION_DIR` for debugging and tell the user where files 
 8. **Dynamic quorum.** Use `MIN_QUORUM` from config. Abort if fewer than `MIN_QUORUM` reviews available (including Claude).
 9. **Convergence through messaging.** Lead sends draft to teammates, they run their model and report back. Max 2 rounds.
 10. **No plan mode.** Code reviews are presented directly, not written to plan files.
-11. **Be patient with teammates — they almost never fail.** External CLI models (Codex, Antigravity, Kilo) take time to explore the codebase but almost always finish successfully. Follow this activity-based patience protocol:
-    - **Poll output files** every ~1 minute using `wc -c < $SESSION_DIR/{model.id}.md 2>/dev/null || echo 0` to check file size.
+11. **Be patient with teammates — they almost never fail.** External CLI models (Codex, Antigravity, pi) take time to explore the codebase but almost always finish successfully. Follow this activity-based patience protocol:
+    - **Poll the process, not the file** every ~1 minute:
+      `kill -0 $(cat $SESSION_DIR/{model.id}.pid) 2>/dev/null && echo ALIVE || echo GONE`.
+      `pi` buffers all output until exit, so the output file is 0 bytes for the
+      whole run and its size says nothing about health.
     - **Growing file (or no file yet)** = the model is working. Keep waiting.
     - **A teammate is ONLY considered stuck if**: their output file exists AND its size has not changed for **10 consecutive checks** (10 minutes of zero growth).
     - If stuck after 10 minutes, send a check-in message: "Are you still working? Send me your current output if you have any." Wait another 3 minutes before giving up on that teammate.

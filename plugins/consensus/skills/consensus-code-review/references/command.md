@@ -33,16 +33,6 @@ Resolve common targets:
 
 Support `--dirs /path/a,/path/b` exactly like plan review.
 
-## CodeRabbit
-
-If `command -v coderabbit` succeeds, run CodeRabbit as a supplementary static-analysis reviewer:
-
-```bash
-coderabbit review --plain > "$SESSION_DIR/coderabbit.md" 2>&1
-```
-
-Include CodeRabbit findings in comparison and synthesis, but do not count CodeRabbit toward quorum and do not include it in convergence rounds.
-
 ## Shared Prompt
 
 Write `$SESSION_DIR/prompt.md`:
@@ -95,7 +85,7 @@ Use the standard code-review stance:
 
 ## Compare And Synthesize
 
-Read `codex.md`, each external model file, and `coderabbit.md` if present.
+Read `codex.md` and each external model file.
 
 Show:
 
@@ -104,7 +94,7 @@ Show:
 - disagreements or false positives
 - missing tests
 - unintended consequences
-- comparison table with Codex, CodeRabbit if present, and participating models
+- comparison table with Codex and participating models
 
 The synthesized review should include:
 
@@ -133,4 +123,4 @@ Review this synthesis. Start your response with one of:
 Only raise issues that materially affect correctness, severity, or usefulness.
 ```
 
-Run convergence for external model reviewers only. CodeRabbit does not participate in convergence.
+Run convergence for external model reviewers only.
