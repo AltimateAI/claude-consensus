@@ -26,6 +26,8 @@ AskUserQuestion:
 
 If user chooses "Keep current", print the current config summary and stop.
 
+If user chooses "Reconfigure", note any entry whose `id` is not one of the 9 built-in ids, or whose `command` uses a different OpenRouter id than the table in Step 5. Offer those again in Step 5 instead of silently dropping them.
+
 ## Step 2: Auto-Detect CLIs
 
 Run all of these checks in parallel via Bash:
@@ -117,19 +119,19 @@ If user provides a key, update `~/.claude/.env` idempotently:
 
 Build the model list based on provider choice and detected CLIs.
 
-The 9 supported models and their CLI mappings:
+The 9 built-in model slots and their CLI mappings:
 
 | Model ID | Name | OpenRouter (pi) | Native CLI |
 |----------|------|-------------------|------------|
-| `gpt` | GPT 5.3 Codex | `pi --provider openrouter --model openai/gpt-5.3-codex -p` | `codex` (if codex CLI installed — note: native codex uses whatever model your `~/.codex/config.toml` specifies, e.g. `gpt-5.5`) |
-| `gemini` | Gemini via Antigravity | `pi --provider openrouter --model google/gemini-3.1-pro-preview -p` | `agy` (if Antigravity CLI installed) |
-| `kimi` | Kimi K2.6 | `pi --provider openrouter --model moonshotai/kimi-k2.6 -p` | OpenRouter only |
-| `grok` | Grok 4.3 | `pi --provider openrouter --model x-ai/grok-4.3 -p` | OpenRouter only |
-| `minimax` | MiniMax M2.7 | `pi --provider openrouter --model minimax/minimax-m2.7 -p` | OpenRouter only |
-| `glm5` | GLM-5.2 | `pi --provider openrouter --model z-ai/glm-5.2 -p` | OpenRouter only |
-| `qwen` | Qwen 3.6 Plus | `pi --provider openrouter --model qwen/qwen3.6-plus -p` | `qwen` (if qwen CLI installed) |
-| `mimo` | MiMo V2.5 Pro | `pi --provider openrouter --model xiaomi/mimo-v2.5-pro -p` | OpenRouter only |
-| `deepseek` | DeepSeek V4 Pro | `pi --provider openrouter --model deepseek/deepseek-v4-pro -p` | OpenRouter only |
+| `gpt` | GPT 6.1 Sol | `pi --provider openrouter --model openai/gpt-6.1-sol -p` | `codex` (if codex CLI installed — note: native codex uses whatever model your `~/.codex/config.toml` specifies, e.g. `gpt-6.1-sol`) |
+| `gemini` | Gemini via Antigravity | `pi --provider openrouter --model google/gemini-4-argon -p` | `agy` (if Antigravity CLI installed) |
+| `kimi` | Kimi K3.1 Pro | `pi --provider openrouter --model moonshotai/kimi-k3.1-pro -p` | OpenRouter only |
+| `grok` | Grok 4.7 | `pi --provider openrouter --model x-ai/grok-4.7 -p` | OpenRouter only |
+| `minimax` | MiniMax M3 | `pi --provider openrouter --model minimax/minimax-m3 -p` | OpenRouter only |
+| `glm5` | GLM-5.3 | `pi --provider openrouter --model z-ai/glm-5.3 -p` | OpenRouter only |
+| `qwen` | Qwen 3.8 Max | `pi --provider openrouter --model qwen/qwen3.8-max-0902 -p` | `qwen` (if qwen CLI installed) |
+| `mimo` | MiMo V2.6 Pro | `pi --provider openrouter --model xiaomi/mimo-v2.6-pro -p` | OpenRouter only |
+| `deepseek` | DeepSeek V4 Pro | `pi --provider openrouter --model deepseek/deepseek-v4-pro-0813 -p` | OpenRouter only |
 
 **Note on native CLIs**: For `codex`, `agy`, and `qwen`, set the config's `command` field to just `codex`, `agy`, or `qwen`. The teammate template in the review/plan commands detects these and uses the correct native invocation patterns automatically (e.g., `codex exec -s read-only` for reviews, `codex exec resume --last` for convergence, `agy --sandbox -p` for reviews and convergence prompts, `qwen --approval-mode plan -p` with `-o text` for reviews, `qwen -c -p` for convergence). The `resume_flag` field is ignored for native CLIs.
 
@@ -144,27 +146,38 @@ AskUserQuestion:
   header: "Models"
   multiSelect: true
   options:
-    - label: "GPT 5.3 Codex"
+    - label: "GPT 6.1 Sol"
       description: "{available via OpenRouter / available via codex CLI / not available}"
-    - label: "Gemini 3.1 Pro"
+    - label: "Gemini 4 Argon"
       description: "{available via OpenRouter / available via Antigravity CLI / not available}"
-    - label: "Kimi K2.6"
+    - label: "Kimi K3.1 Pro"
       description: "{available via OpenRouter / not available}"
-    - label: "Grok 4.3"
+    - label: "Grok 4.7"
       description: "{available via OpenRouter / not available}"
-    - label: "MiniMax M2.7"
+    - label: "MiniMax M3"
       description: "{available via OpenRouter / not available}"
-    - label: "GLM-5.2"
+    - label: "GLM-5.3"
       description: "{available via OpenRouter / not available}"
-    - label: "Qwen 3.6 Plus"
+    - label: "Qwen 3.8 Max"
       description: "{available via OpenRouter / available via qwen CLI / not available}"
-    - label: "MiMo V2.5 Pro"
+    - label: "MiMo V2.6 Pro"
       description: "{available via OpenRouter / not available}"
     - label: "DeepSeek V4 Pro"
       description: "{available via OpenRouter / not available}"
 ```
 
-(Show all 9 models. Mark unavailable ones clearly. Pre-select available ones.)
+AskUserQuestion accepts at most 4 options per question and 4 questions per call. Split the models into multiSelect questions of at most 4 options each, asked in one call (for example 4 + 4 + 1, adding a "None of these" option to the last). Mark unavailable models clearly. The tool cannot pre-select options, so say in each description whether the model is currently enabled.
+
+### Custom or extra models (optional)
+
+OpenRouter adds models faster than this table changes. If the user asks for a newer model in a slot's family, or for an extra panelist (for example a second DeepSeek variant):
+
+- check that the OpenRouter id is listed: `curl -s https://openrouter.ai/api/v1/models | jq -r '.data[].id' | grep -F '<id>'`
+- for a slot replacement, keep the slot's `id` (for example `gemini`) and change only `name` and `command`
+- for an extra entry, use a new unique `id` matching `[a-z0-9-]+`; it names the session files (`$SESSION_DIR/{id}.md`, `pi-{id}`) and the teammate
+- use `command: "pi --provider openrouter --model <openrouter-id> -p"` and `resume_flag: "-c"`
+
+Custom and extra entries count toward quorum and go through the same smoke test as built-in models.
 
 **Enforce: at least 1 external model must be selected.** If user selects none, tell them: "At least 1 external model is required for consensus reviews."
 
@@ -196,7 +209,7 @@ Constraints:
 
 Build the config JSON based on selections from Steps 3-6.
 
-For each of the 9 models:
+For each of the 9 built-in slots, plus any custom or extra entries from Step 5:
 - If the model was selected: set `enabled: true` and populate `command`/`resume_flag` based on provider choice
 - If the model was NOT selected: set `enabled: false` with the default OpenRouter command (so users can re-enable later)
 
@@ -229,7 +242,7 @@ Write the config to `~/.claude/consensus.json` using the Write tool:
 }
 ```
 
-All 9 models are always written to the config — enabled or disabled.
+All 9 built-in slots are always written to the config — enabled or disabled — followed by any extra entries.
 
 ## Step 8: Smoke Test
 
@@ -239,12 +252,20 @@ For each enabled model, run a quick test:
 [ -f ~/.claude/.env ] && export OPENROUTER_API_KEY=$(grep '^OPENROUTER_API_KEY=' ~/.claude/.env | cut -d= -f2- | tr -d '"')
 ```
 
+If any enabled model uses pi, refresh pi's model catalog first. pi's bundled catalog lags OpenRouter, and this call makes no model requests:
+
+```bash
+pi update --models < /dev/null
+```
+
+If pi still does not know an id, it prints `Model "<id>" not found for provider "openrouter". Using custom model id.` and falls back to default request limits, which some providers reject (for example HTTP 400 when the default `max_tokens` exceeds the model's completion cap). Report that warning next to the model's result.
+
 Use the command pattern for the configured CLI:
 
 - `codex`: `printf '%s\n' "Reply with exactly: PONG" | codex exec -s read-only - 2>&1 | head -20`
 - `agy`: `agy --sandbox -p "Reply with exactly: PONG" 2>&1 | head -20`
 - `qwen`: `qwen --approval-mode plan -p "Reply with exactly: PONG" -o text 2>&1 | head -20`
-- pi/OpenRouter: `{model.command} "Reply with exactly: PONG" 2>&1 | head -20`
+- pi/OpenRouter: `{model.command} "Reply with exactly: PONG" < /dev/null 2>&1 | head -20` (always close stdin: pi blocks forever on a non-TTY stdin)
 
 Check if the output contains "PONG" (case-insensitive).
 
@@ -256,9 +277,9 @@ Report results:
 ```
 ## Smoke Test Results
 
-- GPT 5.3 Codex: PASS
-- Gemini 3.1 Pro: PASS
-- Kimi K2.6: FAIL — {error or empty output}
+- GPT 6.1 Sol: PASS
+- Gemini 4 Argon: PASS
+- Kimi K3.1 Pro: FAIL — {error or empty output}
 - ...
 ```
 
@@ -296,12 +317,12 @@ Print the final summary:
 
 ## Rules
 
-1. **9 fixed models only.** Do not offer custom model configuration. The wizard supports exactly the 9 models listed above.
+1. **9 built-in slots; custom ids on request.** Offer the 9 built-in models by default. When the user asks, accept a different OpenRouter id for a slot or extra entries with unique ids (see Step 5). Verify each id against the OpenRouter model list and smoke-test it.
 2. **Idempotent .env updates.** When writing API keys, preserve all existing keys in the file. Only add/update the `OPENROUTER_API_KEY` line.
 3. **Native CLI support for codex, agy, and qwen.** When a user selects native CLIs, set the config's `command` field to `codex`, `agy`, or `qwen`. The teammate template in the review/plan commands handles the full invocation patterns automatically. All other models use OpenRouter/pi only. Bare `gemini` is a legacy config value; migrate it to `agy` when rewriting the config.
-4. **OpenRouter is the recommended path.** 1 key = 9 models. Emphasize this as the simplest setup.
+4. **OpenRouter is the recommended path.** 1 key covers every built-in and custom OpenRouter model. Emphasize this as the simplest setup.
 5. **Enforce minimum 1 external model.** Claude alone is not a consensus.
 6. **Hard-stop on quorum failure.** Never finalize a config that can't meet its own quorum.
 7. **User config location is `~/.claude/consensus.json`.** The plugin default at `plugins/consensus/consensus.config.json` is the fallback only.
-8. **Write all 9 models to config.** Include disabled models with `enabled: false` so users can re-enable them later without re-running setup.
+8. **Write all 9 built-in slots to config, plus any extra entries.** Include disabled models with `enabled: false` so users can re-enable them later without re-running setup.
 9. **Targeted API key sourcing.** Only export `OPENROUTER_API_KEY` from `~/.claude/.env`, never export all variables.

@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.9.0] - 2026-11-02
+
+### Fixed
+
+- **pi panelists can no longer hang on stdin.** pi reads stdin whenever it is not a TTY, so a background launch without a redirect could block forever with no CPU and no output, which looked like a healthy run because pi buffers output until exit. Every pi review and convergence launch (Claude commands and the shared Codex reference) and both setup smoke tests now redirect `< /dev/null`.
+
+### Changed
+
+- Default panel moved to the newest model in each family on OpenRouter: `openai/gpt-6.1-sol`, `google/gemini-4-argon`, `moonshotai/kimi-k3.1-pro`, `x-ai/grok-4.7`, `minimax/minimax-m3`, `z-ai/glm-5.3`, `qwen/qwen3.8-max-0902`, `xiaomi/mimo-v2.6-pro`, `deepseek/deepseek-v4-pro-0813`. Several are priced higher than the models they replace (Kimi K3.1 Pro $2/$10, Qwen 3.8 Max $2/$6 per Mtok).
+- Setup refreshes pi's model catalog (`pi update --models`) before smoke tests and reports pi's "Using custom model id" warning. Unknown ids get pi's default request limits, which some providers reject (MiMo V2.6 Pro: HTTP 400, `max_tokens` above its 131,072 cap).
+- Setup can replace a slot with a newer OpenRouter model or add extra panelists with their own ids, keeps such entries on Reconfigure, and splits the model question into groups of at most 4 options (the question tool's limit).
+- Plugin metadata bumped to v1.9.0.
+
 ## [1.8.0] - 2026-07-21
 
 ### Changed

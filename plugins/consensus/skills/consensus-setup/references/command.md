@@ -48,20 +48,20 @@ Use these model mappings:
 
 | ID | Name | Default command | Native alternative |
 |----|------|-----------------|--------------------|
-| `gemini` | Gemini via Antigravity | `pi --provider openrouter --model google/gemini-3.1-pro-preview -p` | `agy` |
-| `kimi` | Kimi K2.6 | `pi --provider openrouter --model moonshotai/kimi-k2.6 -p` | none |
-| `grok` | Grok 4.3 | `pi --provider openrouter --model x-ai/grok-4.3 -p` | none |
-| `minimax` | MiniMax M2.7 | `pi --provider openrouter --model minimax/minimax-m2.7 -p` | none |
-| `glm5` | GLM-5.2 | `pi --provider openrouter --model z-ai/glm-5.2 -p` | none |
-| `qwen` | Qwen 3.6 Plus | `pi --provider openrouter --model qwen/qwen3.6-plus -p` | optional `qwen`, disabled by default unless user asks |
-| `mimo` | MiMo V2.5 Pro | `pi --provider openrouter --model xiaomi/mimo-v2.5-pro -p` | none |
-| `deepseek` | DeepSeek V4 Pro | `pi --provider openrouter --model deepseek/deepseek-v4-pro -p` | none |
+| `gemini` | Gemini via Antigravity | `pi --provider openrouter --model google/gemini-4-argon -p` | `agy` |
+| `kimi` | Kimi K3.1 Pro | `pi --provider openrouter --model moonshotai/kimi-k3.1-pro -p` | none |
+| `grok` | Grok 4.7 | `pi --provider openrouter --model x-ai/grok-4.7 -p` | none |
+| `minimax` | MiniMax M3 | `pi --provider openrouter --model minimax/minimax-m3 -p` | none |
+| `glm5` | GLM-5.3 | `pi --provider openrouter --model z-ai/glm-5.3 -p` | none |
+| `qwen` | Qwen 3.8 Max | `pi --provider openrouter --model qwen/qwen3.8-max-0902 -p` | optional `qwen`, disabled by default unless user asks |
+| `mimo` | MiMo V2.6 Pro | `pi --provider openrouter --model xiaomi/mimo-v2.6-pro -p` | none |
+| `deepseek` | DeepSeek V4 Pro | `pi --provider openrouter --model deepseek/deepseek-v4-pro-0813 -p` | none |
 
 Codex setup intentionally omits the Claude plugin's `gpt` model because Codex/GPT is the lead in Codex sessions.
 
 Recommended defaults:
 
-- enable the current stable non-Codex panel: Gemini via Antigravity, Kimi, MiniMax, GLM-5.2, Qwen, MiMo V2.5 Pro, and DeepSeek
+- enable the current stable non-Codex panel: Gemini via Antigravity, Kimi, MiniMax, GLM-5.3, Qwen, MiMo V2.6 Pro, and DeepSeek
 - leave Grok disabled by default unless the user explicitly enables it
 - use Antigravity CLI when `agy` is installed; review workflows call it with `--sandbox -p` for both initial and convergence prompts
 - use pi/OpenRouter for the rest
@@ -88,7 +88,11 @@ When saving a key, write only to `~/.codex/.env`:
 
 Never copy the key into repo files or print it back to the user.
 
-## Step 4: Write Config
+## Step 4: Refresh pi Model Catalog
+
+If any enabled model uses pi, run `pi update --models < /dev/null` (no model calls, no credits). pi's bundled catalog lags OpenRouter; an unknown id prints `Model "<id>" not found for provider "openrouter". Using custom model id.` and uses default request limits, which some providers reject (for example `max_tokens` above the model's completion cap). Report any such warning in the summary.
+
+## Step 5: Write Config
 
 Write `~/.codex/consensus.json` with this shape:
 
@@ -115,7 +119,7 @@ Write `~/.codex/consensus.json` with this shape:
 }
 ```
 
-Include all 8 non-Codex external models, with `enabled` reflecting the user's selected panel.
+Include all 8 built-in non-Codex external models, with `enabled` reflecting the user's selected panel. If the user asks for a newer OpenRouter model in a slot, keep the slot's `id` and change `name` and `command`. For an extra panelist, add an entry with a new unique `id` matching `[a-z0-9-]+`. Verify every custom OpenRouter id is listed at `https://openrouter.ai/api/v1/models`. Never add a `gpt` or `codex` entry.
 
 Use the selected quorum. The default Codex panel uses `min_quorum: 8`.
 
@@ -125,7 +129,7 @@ For native Google/Gemini execution, use `command: "agy"` and `resume_flag: ""`.
 
 For native Qwen, only use `command: "qwen"` if the user explicitly selects native Qwen; otherwise prefer pi/OpenRouter.
 
-## Step 5: Optional Smoke Test
+## Step 6: Optional Smoke Test
 
 Only run this if the user explicitly asks for live validation:
 
@@ -141,7 +145,7 @@ For each enabled model, run a tiny prompt asking it to reply `PONG`, using the c
 
 - `agy`: `agy --sandbox -p "Reply with exactly: PONG"`
 - `qwen`: `qwen --approval-mode plan -p "Reply with exactly: PONG" -o text`
-- pi/OpenRouter: `{model.command} "Reply with exactly: PONG"`
+- pi/OpenRouter: `{model.command} "Reply with exactly: PONG" < /dev/null` (always close stdin: pi blocks forever on a non-TTY stdin)
 
 If a model fails, disable it only after reporting the failure and confirming that quorum still holds. If quorum would fail, leave the prior valid config in place and tell the user what needs to be fixed.
 

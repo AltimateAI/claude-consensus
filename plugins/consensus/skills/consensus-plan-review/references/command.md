@@ -112,7 +112,8 @@ pi/OpenRouter:
 
 ```bash
 # pi buffers all output until exit, so track liveness by process, not file size.
-( {MODEL_COMMAND} --session-dir "$SESSION_DIR/pi-{MODEL_ID}" "$(cat "$SESSION_DIR/prompt.md")" > "$SESSION_DIR/{MODEL_ID}.md" 2>&1; echo $? > "$SESSION_DIR/{MODEL_ID}.exit" ) &
+# stdin must be /dev/null: pi blocks forever reading a non-TTY stdin.
+( {MODEL_COMMAND} --session-dir "$SESSION_DIR/pi-{MODEL_ID}" "$(cat "$SESSION_DIR/prompt.md")" > "$SESSION_DIR/{MODEL_ID}.md" 2>&1 < /dev/null; echo $? > "$SESSION_DIR/{MODEL_ID}.exit" ) &
 echo $! > "$SESSION_DIR/{MODEL_ID}.pid"
 wait $(cat "$SESSION_DIR/{MODEL_ID}.pid")
 ```
@@ -200,7 +201,7 @@ Run the convergence prompt against every external model.
 pi/OpenRouter:
 
 ```bash
-{MODEL_COMMAND} {MODEL_RESUME_FLAG} --session-dir "$SESSION_DIR/pi-{MODEL_ID}" "$(cat "$SESSION_DIR/convergence-prompt.md")" > "$SESSION_DIR/{MODEL_ID}-convergence.md" 2>&1
+{MODEL_COMMAND} {MODEL_RESUME_FLAG} --session-dir "$SESSION_DIR/pi-{MODEL_ID}" "$(cat "$SESSION_DIR/convergence-prompt.md")" > "$SESSION_DIR/{MODEL_ID}-convergence.md" 2>&1 < /dev/null
 ```
 
 Antigravity (`agy`):

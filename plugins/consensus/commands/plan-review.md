@@ -265,7 +265,9 @@ SESSION_DIR={SESSION_DIR}
    # until completion either). So progress is NOT observable from the output
    # file; liveness must come from the process. Launch it with a pid file and
    # an exit sentinel so the lead can distinguish "still working" from "done".
-   ( {MODEL_COMMAND} --session-dir "$SESSION_DIR/pi-{MODEL_ID}" "$(cat $SESSION_DIR/prompt.md)" > $SESSION_DIR/{MODEL_ID}.md 2>&1; echo $? > $SESSION_DIR/{MODEL_ID}.exit ) &
+   # stdin MUST be /dev/null: pi reads stdin whenever it is not a TTY, so a
+   # background launch without it blocks forever (no CPU, no output).
+   ( {MODEL_COMMAND} --session-dir "$SESSION_DIR/pi-{MODEL_ID}" "$(cat $SESSION_DIR/prompt.md)" > $SESSION_DIR/{MODEL_ID}.md 2>&1 < /dev/null; echo $? > $SESSION_DIR/{MODEL_ID}.exit ) &
    echo $! > $SESSION_DIR/{MODEL_ID}.pid
    wait $(cat $SESSION_DIR/{MODEL_ID}.pid)
 
@@ -293,7 +295,7 @@ After sending the plan, WAIT. The lead will send you a convergence prompt. When 
    qwen -c -p "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" -o text > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1
 
    **Otherwise (pi/OpenRouter — default):**
-   ( {MODEL_COMMAND} {MODEL_RESUME_FLAG} --session-dir "$SESSION_DIR/pi-{MODEL_ID}" "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1; echo $? > $SESSION_DIR/{MODEL_ID}-convergence.exit ) &
+   ( {MODEL_COMMAND} {MODEL_RESUME_FLAG} --session-dir "$SESSION_DIR/pi-{MODEL_ID}" "$(cat $SESSION_DIR/convergence-prompt-{MODEL_ID}.md)" > $SESSION_DIR/{MODEL_ID}-convergence.md 2>&1 < /dev/null; echo $? > $SESSION_DIR/{MODEL_ID}-convergence.exit ) &
    echo $! > $SESSION_DIR/{MODEL_ID}-convergence.pid
    wait $(cat $SESSION_DIR/{MODEL_ID}-convergence.pid)
 
