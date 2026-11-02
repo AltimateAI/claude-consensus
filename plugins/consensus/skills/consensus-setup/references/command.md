@@ -141,7 +141,7 @@ For each enabled model, run a tiny prompt asking it to reply `PONG`, using the c
 
 - `agy`: `agy --sandbox -p "Reply with exactly: PONG"`
 - `qwen`: `qwen --approval-mode plan -p "Reply with exactly: PONG" -o text`
-- pi/OpenRouter: `{model.command} "Reply with exactly: PONG"`
+- pi/OpenRouter: `{model.command} "Reply with exactly: PONG" < /dev/null` (always close stdin: pi blocks forever on a non-TTY stdin)
 
 If a model fails, disable it only after reporting the failure and confirming that quorum still holds. If quorum would fail, leave the prior valid config in place and tell the user what needs to be fixed.
 

@@ -244,7 +244,7 @@ Use the command pattern for the configured CLI:
 - `codex`: `printf '%s\n' "Reply with exactly: PONG" | codex exec -s read-only - 2>&1 | head -20`
 - `agy`: `agy --sandbox -p "Reply with exactly: PONG" 2>&1 | head -20`
 - `qwen`: `qwen --approval-mode plan -p "Reply with exactly: PONG" -o text 2>&1 | head -20`
-- pi/OpenRouter: `{model.command} "Reply with exactly: PONG" 2>&1 | head -20`
+- pi/OpenRouter: `{model.command} "Reply with exactly: PONG" < /dev/null 2>&1 | head -20` (always close stdin: pi blocks forever on a non-TTY stdin)
 
 Check if the output contains "PONG" (case-insensitive).
 
