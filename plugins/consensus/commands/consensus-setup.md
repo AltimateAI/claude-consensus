@@ -26,6 +26,8 @@ AskUserQuestion:
 
 If user chooses "Keep current", print the current config summary and stop.
 
+If user chooses "Reconfigure", note any entry whose `id` is not one of the 9 built-in ids, or whose `command` uses a different OpenRouter id than the table in Step 5. Offer those again in Step 5 instead of silently dropping them.
+
 ## Step 2: Auto-Detect CLIs
 
 Run all of these checks in parallel via Bash:
@@ -117,7 +119,7 @@ If user provides a key, update `~/.claude/.env` idempotently:
 
 Build the model list based on provider choice and detected CLIs.
 
-The 9 supported models and their CLI mappings:
+The 9 built-in model slots and their CLI mappings:
 
 | Model ID | Name | OpenRouter (pi) | Native CLI |
 |----------|------|-------------------|------------|
@@ -164,7 +166,18 @@ AskUserQuestion:
       description: "{available via OpenRouter / not available}"
 ```
 
-(Show all 9 models. Mark unavailable ones clearly. Pre-select available ones.)
+AskUserQuestion accepts at most 4 options per question and 4 questions per call. Split the models into multiSelect questions of at most 4 options each, asked in one call (for example 4 + 4 + 1, adding a "None of these" option to the last). Mark unavailable models clearly. The tool cannot pre-select options, so say in each description whether the model is currently enabled.
+
+### Custom or extra models (optional)
+
+OpenRouter adds models faster than this table changes. If the user asks for a newer model in a slot's family, or for an extra panelist (for example a second DeepSeek variant):
+
+- check that the OpenRouter id is listed: `curl -s https://openrouter.ai/api/v1/models | jq -r '.data[].id' | grep -F '<id>'`
+- for a slot replacement, keep the slot's `id` (for example `gemini`) and change only `name` and `command`
+- for an extra entry, use a new unique `id` matching `[a-z0-9-]+`; it names the session files (`$SESSION_DIR/{id}.md`, `pi-{id}`) and the teammate
+- use `command: "pi --provider openrouter --model <openrouter-id> -p"` and `resume_flag: "-c"`
+
+Custom and extra entries count toward quorum and go through the same smoke test as built-in models.
 
 **Enforce: at least 1 external model must be selected.** If user selects none, tell them: "At least 1 external model is required for consensus reviews."
 
@@ -196,7 +209,7 @@ Constraints:
 
 Build the config JSON based on selections from Steps 3-6.
 
-For each of the 9 models:
+For each of the 9 built-in slots, plus any custom or extra entries from Step 5:
 - If the model was selected: set `enabled: true` and populate `command`/`resume_flag` based on provider choice
 - If the model was NOT selected: set `enabled: false` with the default OpenRouter command (so users can re-enable later)
 
@@ -229,7 +242,7 @@ Write the config to `~/.claude/consensus.json` using the Write tool:
 }
 ```
 
-All 9 models are always written to the config — enabled or disabled.
+All 9 built-in slots are always written to the config — enabled or disabled — followed by any extra entries.
 
 ## Step 8: Smoke Test
 
@@ -304,12 +317,12 @@ Print the final summary:
 
 ## Rules
 
-1. **9 fixed models only.** Do not offer custom model configuration. The wizard supports exactly the 9 models listed above.
+1. **9 built-in slots; custom ids on request.** Offer the 9 built-in models by default. When the user asks, accept a different OpenRouter id for a slot or extra entries with unique ids (see Step 5). Verify each id against the OpenRouter model list and smoke-test it.
 2. **Idempotent .env updates.** When writing API keys, preserve all existing keys in the file. Only add/update the `OPENROUTER_API_KEY` line.
 3. **Native CLI support for codex, agy, and qwen.** When a user selects native CLIs, set the config's `command` field to `codex`, `agy`, or `qwen`. The teammate template in the review/plan commands handles the full invocation patterns automatically. All other models use OpenRouter/pi only. Bare `gemini` is a legacy config value; migrate it to `agy` when rewriting the config.
-4. **OpenRouter is the recommended path.** 1 key = 9 models. Emphasize this as the simplest setup.
+4. **OpenRouter is the recommended path.** 1 key covers every built-in and custom OpenRouter model. Emphasize this as the simplest setup.
 5. **Enforce minimum 1 external model.** Claude alone is not a consensus.
 6. **Hard-stop on quorum failure.** Never finalize a config that can't meet its own quorum.
 7. **User config location is `~/.claude/consensus.json`.** The plugin default at `plugins/consensus/consensus.config.json` is the fallback only.
-8. **Write all 9 models to config.** Include disabled models with `enabled: false` so users can re-enable them later without re-running setup.
+8. **Write all 9 built-in slots to config, plus any extra entries.** Include disabled models with `enabled: false` so users can re-enable them later without re-running setup.
 9. **Targeted API key sourcing.** Only export `OPENROUTER_API_KEY` from `~/.claude/.env`, never export all variables.

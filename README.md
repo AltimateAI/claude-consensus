@@ -85,6 +85,8 @@ Alias skills are also provided for `code-review`, `plan-review`, `plan-reviwe`, 
 
 Codex intentionally excludes Codex/GPT from the external panel because Codex is already the lead reviewer.
 
+Setup can also replace a slot with a newer OpenRouter model, or add extra panelists with their own ids; see the setup command for the rules.
+
 ## Configuration
 
 | Host | User config | Default config | Env file |

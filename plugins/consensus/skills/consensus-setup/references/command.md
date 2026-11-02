@@ -119,7 +119,7 @@ Write `~/.codex/consensus.json` with this shape:
 }
 ```
 
-Include all 8 non-Codex external models, with `enabled` reflecting the user's selected panel.
+Include all 8 built-in non-Codex external models, with `enabled` reflecting the user's selected panel. If the user asks for a newer OpenRouter model in a slot, keep the slot's `id` and change `name` and `command`. For an extra panelist, add an entry with a new unique `id` matching `[a-z0-9-]+`. Verify every custom OpenRouter id is listed at `https://openrouter.ai/api/v1/models`. Never add a `gpt` or `codex` entry.
 
 Use the selected quorum. The default Codex panel uses `min_quorum: 8`.
 
