@@ -121,14 +121,14 @@ The 9 supported models and their CLI mappings:
 
 | Model ID | Name | OpenRouter (pi) | Native CLI |
 |----------|------|-------------------|------------|
-| `gpt` | GPT 5.3 Codex | `pi --provider openrouter --model openai/gpt-5.3-codex -p` | `codex` (if codex CLI installed — note: native codex uses whatever model your `~/.codex/config.toml` specifies, e.g. `gpt-5.5`) |
-| `gemini` | Gemini via Antigravity | `pi --provider openrouter --model google/gemini-3.1-pro-preview -p` | `agy` (if Antigravity CLI installed) |
-| `kimi` | Kimi K2.6 | `pi --provider openrouter --model moonshotai/kimi-k2.6 -p` | OpenRouter only |
-| `grok` | Grok 4.3 | `pi --provider openrouter --model x-ai/grok-4.3 -p` | OpenRouter only |
-| `minimax` | MiniMax M2.7 | `pi --provider openrouter --model minimax/minimax-m2.7 -p` | OpenRouter only |
-| `glm5` | GLM-5.2 | `pi --provider openrouter --model z-ai/glm-5.2 -p` | OpenRouter only |
-| `qwen` | Qwen 3.6 Plus | `pi --provider openrouter --model qwen/qwen3.6-plus -p` | `qwen` (if qwen CLI installed) |
-| `mimo` | MiMo V2.5 Pro | `pi --provider openrouter --model xiaomi/mimo-v2.5-pro -p` | OpenRouter only |
+| `gpt` | GPT 6.1 Sol | `pi --provider openrouter --model openai/gpt-6.1-sol -p` | `codex` (if codex CLI installed — note: native codex uses whatever model your `~/.codex/config.toml` specifies, e.g. `gpt-6.1-sol`) |
+| `gemini` | Gemini via Antigravity | `pi --provider openrouter --model google/gemini-4-argon -p` | `agy` (if Antigravity CLI installed) |
+| `kimi` | Kimi K3.1 Pro | `pi --provider openrouter --model moonshotai/kimi-k3.1-pro -p` | OpenRouter only |
+| `grok` | Grok 4.7 | `pi --provider openrouter --model x-ai/grok-4.7 -p` | OpenRouter only |
+| `minimax` | MiniMax M3.1 Flash | `pi --provider openrouter --model minimax/minimax-m3.1-flash -p` | OpenRouter only |
+| `glm5` | GLM-5.3 | `pi --provider openrouter --model z-ai/glm-5.3 -p` | OpenRouter only |
+| `qwen` | Qwen 3.8 Max | `pi --provider openrouter --model qwen/qwen3.8-max-0902 -p` | `qwen` (if qwen CLI installed) |
+| `mimo` | MiMo V2.6 Pro | `pi --provider openrouter --model xiaomi/mimo-v2.6-pro -p` | OpenRouter only |
 | `deepseek` | DeepSeek V4 Pro | `pi --provider openrouter --model deepseek/deepseek-v4-pro -p` | OpenRouter only |
 
 **Note on native CLIs**: For `codex`, `agy`, and `qwen`, set the config's `command` field to just `codex`, `agy`, or `qwen`. The teammate template in the review/plan commands detects these and uses the correct native invocation patterns automatically (e.g., `codex exec -s read-only` for reviews, `codex exec resume --last` for convergence, `agy --sandbox -p` for reviews and convergence prompts, `qwen --approval-mode plan -p` with `-o text` for reviews, `qwen -c -p` for convergence). The `resume_flag` field is ignored for native CLIs.
@@ -144,21 +144,21 @@ AskUserQuestion:
   header: "Models"
   multiSelect: true
   options:
-    - label: "GPT 5.3 Codex"
+    - label: "GPT 6.1 Sol"
       description: "{available via OpenRouter / available via codex CLI / not available}"
-    - label: "Gemini 3.1 Pro"
+    - label: "Gemini 4 Argon"
       description: "{available via OpenRouter / available via Antigravity CLI / not available}"
-    - label: "Kimi K2.6"
+    - label: "Kimi K3.1 Pro"
       description: "{available via OpenRouter / not available}"
-    - label: "Grok 4.3"
+    - label: "Grok 4.7"
       description: "{available via OpenRouter / not available}"
-    - label: "MiniMax M2.7"
+    - label: "MiniMax M3.1 Flash"
       description: "{available via OpenRouter / not available}"
-    - label: "GLM-5.2"
+    - label: "GLM-5.3"
       description: "{available via OpenRouter / not available}"
-    - label: "Qwen 3.6 Plus"
+    - label: "Qwen 3.8 Max"
       description: "{available via OpenRouter / available via qwen CLI / not available}"
-    - label: "MiMo V2.5 Pro"
+    - label: "MiMo V2.6 Pro"
       description: "{available via OpenRouter / not available}"
     - label: "DeepSeek V4 Pro"
       description: "{available via OpenRouter / not available}"
@@ -208,7 +208,7 @@ Write the config to `~/.claude/consensus.json` using the Write tool:
 
 ```json
 {
-  "version": "1.7.0",
+  "version": "1.9.0",
   "models": [
     {
       "id": "{model_id}",
@@ -256,9 +256,9 @@ Report results:
 ```
 ## Smoke Test Results
 
-- GPT 5.3 Codex: PASS
-- Gemini 3.1 Pro: PASS
-- Kimi K2.6: FAIL — {error or empty output}
+- GPT 6.1 Sol: PASS
+- Gemini 4 Argon: PASS
+- Kimi K3.1 Pro: FAIL — {error or empty output}
 - ...
 ```
 

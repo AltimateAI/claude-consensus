@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.9.0] - 2026-11-02
+
+### Changed
+
+- Default panel updated to the latest OpenRouter models: `openai/gpt-5.3-codex` → `openai/gpt-6.1-sol`, `google/gemini-3.1-pro-preview` → `google/gemini-4-argon`, `moonshotai/kimi-k2.6` → `moonshotai/kimi-k3.1-pro`, `x-ai/grok-4.3` → `x-ai/grok-4.7`, `minimax/minimax-m2.7` → `minimax/minimax-m3.1-flash`, `z-ai/glm-5.2` → `z-ai/glm-5.3`, `qwen/qwen3.6-plus` → `qwen/qwen3.8-max-0902`, `xiaomi/mimo-v2.5-pro` → `xiaomi/mimo-v2.6-pro`. Config model ids (`gpt`, `glm5`, …) are unchanged; only the `command` and `name` strings move.
+- DeepSeek stays on `deepseek/deepseek-v4-pro`: the GA snapshot `deepseek-v4-pro-0813` failed 5 of 10 pi calls with HTTP 400. pi requests the catalog max output, and one OpenRouter provider for that snapshot (GMICloud) advertises a 943,717-token cap but rejects anything above 393,216.
+- Per-token prices change for most of the panel: input rises for GPT, Kimi, Qwen (Plus → Max tier), Grok and GLM; output rises for Kimi (~2.9×), Qwen (~3.1×) and Grok (~2.4×) and falls for GPT, Gemini and GLM; MiniMax and MiMo get cheaper on both.
+- Grok's context window drops from 1000K to 500K tokens.
+- Plugin metadata and config `version` examples bumped to v1.9.0.
+
+### Migration
+
+- Existing `~/.claude/consensus.json` / `~/.codex/consensus.json` files take precedence over the bundled defaults and keep their current model commands. Re-run `/consensus-setup` (Claude) or `consensus-setup` (Codex) to adopt the new panel.
+
 ## [1.8.0] - 2026-07-21
 
 ### Changed

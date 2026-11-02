@@ -240,7 +240,7 @@ Attribution table:
 ```markdown
 | Decision / Element | Origin | Type |
 |--------------------|--------|------|
-| ... | Codex, Kimi K2.6, ... | Consensus / Unique / Convergence fix |
+| ... | Codex, Kimi K3.1 Pro, ... | Consensus / Unique / Convergence fix |
 ```
 
 ## Rules
